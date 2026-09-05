@@ -64,12 +64,17 @@ $ echo $PRINCIPLE
 
 <div align="center">
 
-<img height="165" src="https://github-readme-stats.vercel.app/api?username=ChiJiun&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0d1117&count_private=true&include_all_commits=true&rank_icon=github" />
-<img height="165" src="https://github-readme-stats.vercel.app/api/top-langs/?username=ChiJiun&layout=compact&theme=tokyonight&hide_border=true&bg_color=0d1117&langs_count=8" />
+<img width="98%" src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=ChiJiun&theme=tokyonight" />
 
 <br />
 
-<img height="165" src="https://streak-stats.demolab.com/?user=ChiJiun&theme=tokyonight&hide_border=true&background=0d1117" />
+<img height="200" src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=ChiJiun&theme=tokyonight" />
+<img height="200" src="https://github-profile-summary-cards.vercel.app/api/cards/most-commit-language?username=ChiJiun&theme=tokyonight" />
+
+<br />
+
+<img height="200" src="https://github-profile-summary-cards.vercel.app/api/cards/productive-time?username=ChiJiun&theme=tokyonight&utcOffset=8" />
+<img height="200" src="https://streak-stats.demolab.com/?user=ChiJiun&theme=tokyonight&hide_border=true&background=0d1117" />
 
 </div>
 
