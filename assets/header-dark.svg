@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" width="1000" height="240" role="img" aria-label="ChiJiun - Quantitative Research, FX Forecasting, Automation">
+  <defs>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="scrim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0d1117" stop-opacity="0.96"/>
+      <stop offset="60%" stop-color="#0d1117" stop-opacity="0.80"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="240" rx="12" fill="#0d1117"/>
+
+  <g stroke="#21262d" stroke-width="1">
+    <line x1="0" y1="60" x2="1000" y2="60"/>
+    <line x1="0" y1="120" x2="1000" y2="120"/>
+    <line x1="0" y1="180" x2="1000" y2="180"/>
+    <line x1="250" y1="0" x2="250" y2="240"/>
+    <line x1="500" y1="0" x2="500" y2="240"/>
+    <line x1="750" y1="0" x2="750" y2="240"/>
+  </g>
+
+  <path fill="url(#area)" opacity="0"
+    d="M40,178 L73,170 L106,182 L139,166 L172,158 L205,168 L238,150 L271,156 L304,140 L337,148 L370,132 L403,142 L436,124 L469,118 L502,130 L535,112 L568,120 L601,104 L634,110 L667,96 L700,86 L733,100 L766,88 L799,78 L832,84 L865,70 L898,76 L931,64 L960,58 L960,240 L40,240 Z">
+    <animate attributeName="opacity" from="0" to="1" begin="1.2s" dur="1.4s" fill="freeze"/>
+  </path>
+
+  <path fill="none" stroke="#00D4FF" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"
+    pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"
+    d="M40,178 L73,170 L106,182 L139,166 L172,158 L205,168 L238,150 L271,156 L304,140 L337,148 L370,132 L403,142 L436,124 L469,118 L502,130 L535,112 L568,120 L601,104 L634,110 L667,96 L700,86 L733,100 L766,88 L799,78 L832,84 L865,70 L898,76 L931,64 L960,58">
+    <animate attributeName="stroke-dashoffset" from="1" to="0" dur="2.4s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1" keyTimes="0;1" values="1;0"/>
+  </path>
+
+  <circle r="4" fill="#00D4FF" opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="2.3s" dur="0.4s" fill="freeze"/>
+    <animate attributeName="cx" from="40" to="960" dur="2.4s" fill="freeze"/>
+    <animate attributeName="cy" dur="2.4s" fill="freeze"
+      values="178;170;182;166;158;168;150;156;140;148;132;142;124;118;130;112;120;104;110;96;86;100;88;78;84;70;76;64;58"/>
+    <animate attributeName="r" begin="2.4s" dur="2s" repeatCount="indefinite" values="4;7;4"/>
+  </circle>
+
+  <rect width="640" height="240" rx="12" fill="url(#scrim)"/>
+
+  <text x="48" y="98" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="52" font-weight="700" fill="#e6edf3" letter-spacing="1">ChiJiun</text>
+  <text x="50" y="132" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" font-weight="500" fill="#7d8590" letter-spacing="3.4">QUANTITATIVE RESEARCH · FX FORECASTING · AUTOMATION</text>
+
+  <text x="50" y="180" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="15" fill="#00D4FF">&#8250; python backtest.py --walk-forward</text>
+  <rect x="368" y="167" width="9" height="17" fill="#00D4FF">
+    <animate attributeName="opacity" values="1;1;0;0" dur="1.06s" repeatCount="indefinite"/>
+  </rect>
+
+  <text x="952" y="34" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" fill="#7d8590" letter-spacing="2">TAIPEI · UTC+8</text>
+</svg>
