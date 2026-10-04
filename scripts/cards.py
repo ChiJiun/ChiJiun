@@ -48,7 +48,12 @@ def d(t: float) -> str:
     return f"animation-delay:{t:.2f}s"
 
 
-def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc):
+def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc, blurb=None):
+    """Grid card (420 wide), or with `blurb` the featured card: 840 wide, text left, mechanism right."""
+    wide = blurb is not None
+    W, H = (840, 226) if wide else (420, 290)
+    vx, vy = (442, 70) if wide else (VX, VY)
+    row_y = 160 if wide else 238
     b = [f'<rect x=".5" y=".5" width="{W-1}" height="{H-1}" rx="12" fill="{T["panel"]}" stroke="{T["line"]}"/>']
     b.append(f'<g class="in">{text(22, 34, idx, 12, "accent", 500, T=T)}{text(50, 34, title, 15, "fg", 700, T=T)}</g>')
     b.append(f'<g class="in" style="{d(.08)}">{text(22, 54, tags, 11, "muted", T=T)}</g>')
@@ -57,17 +62,22 @@ def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc):
         f'<g class="in" style="{d(.12)}"><rect x="{W-22-cw:.1f}" y="20" width="{cw:.1f}" height="20" rx="10" '
         f'stroke="{T["line"]}"/>{text(W-22-cw/2, 34, chip, 10.5, "muted", anchor="middle", T=T)}</g>'
     )
-    b.append(f'<g transform="translate({VX},{VY})">{viz}</g>')
-    b.append(f'<line class="fade" style="{d(.3)}" x1="22" x2="{W-22}" y1="216.5" y2="216.5" stroke="{T["grid"]}"/>')
+    b.append(f'<g transform="translate({vx},{vy})">{viz}</g>')
+    if wide:
+        for i, line in enumerate(tr(blurb).split("\n")):
+            b.append(f'<g class="in" style="{d(.2 + i*.05)}">{text(22, 84 + i * 18, line, 12, "muted", T=T)}</g>')
+        b.append(f'<line class="fade" style="{d(.3)}" x1="22" x2="400" y1="138.5" y2="138.5" stroke="{T["grid"]}"/>')
+    else:
+        b.append(f'<line class="fade" style="{d(.3)}" x1="22" x2="{W-22}" y1="216.5" y2="216.5" stroke="{T["grid"]}"/>')
     for i, (label, value) in enumerate(rows):
-        y = 238 + i * 20
+        y = row_y + i * 20
         b.append(
             f'<g class="in" style="{d(.35 + i * .08)}">'
             + text(22, y, label, 10.5, ROW_COLORS[label], 500, T=T)
             + text(100, y, value, 11, "fg", T=T)
             + "</g>"
         )
-        assert text_w(tr(value), 11) <= W - 22 - 100 + 4, f"row too long: {tr(value)}"
+        assert text_w(tr(value), 11) <= (400 if wide else W - 22) - 100 + 4, f"row too long: {tr(value)}"
     return document(W, H, "".join(b), COMMON_CSS + css, tr(alt), tr(desc))
 
 
@@ -136,6 +146,7 @@ def zk(T):
         "aggregated. Measured: 150/150 per-update proofs verify (synthetic data, 4-parameter model, 10 rounds). "
         "Caveat: 300/300 attacker updates that stay inside the clipping bound also verify, so a proof is not "
         "evidence of honest training.",
+        blurb="Each client update carries a zero-knowledge\nproof that it was clipped and noised; the\nserver aggregates only verified updates.",
     )
 
 
@@ -234,7 +245,7 @@ def lending(T):
                "@keyframes comet{from{stroke-dashoffset:.08;opacity:1}90%{opacity:1}to{stroke-dashoffset:-1;opacity:0}}")
 
     return frame(
-        T, "03", "bitfinex-lending-bot", "python · github actions · bitfinex api", "solo · live",
+        T, "02", "bitfinex-lending-bot", "python · github actions · bitfinex api", "solo · live",
         [("measured", "fills ≥ FRR in 0 of 250 hours"),
          ("decision", "floor 0.018%/day, the backtest optimum"),
          ("caveat", "5.83% APR is a backtest, not a promise")],
@@ -297,7 +308,7 @@ def mvdis(T):
     v.append(f'<g class="fade" style="{d(.6)}">{legend}</g>')
 
     return frame(
-        T, "04", "mvdis-watch", "typescript · cloudflare workers · d1", "solo · live",
+        T, "03", "mvdis-watch", "typescript · cloudflare workers · d1", "solo · live",
         [("cadence", "hot ~10 min, cold ~2 h · sweeps to scale"),
          ("budget", "14 of 50 subrequests per run, free tier"),
          ("caveat", "not real-time: the source has no push")],
@@ -354,7 +365,7 @@ def statsbot(T):
                "@keyframes lit{0%{opacity:0}6%{opacity:1}30%{opacity:1}45%,100%{opacity:0}}")
 
     return frame(
-        T, "05", "StatsDiscordBot", "python · discord.py · openai · sqlite", "team of 2",
+        T, "04", "StatsDiscordBot", "python · discord.py · openai · sqlite", "team of 2",
         [("used by", "~150 students in statistics courses"),
          ("my part", "bot core: login, parsing, LLM calls, Drive"),
          ("keeps", "every attempt, plus an HTML report")],
@@ -417,7 +428,7 @@ def hoyabit(T):
     )
 
     return frame(
-        T, "06", "aws-hoyabit", "python · aws · llm agent", "team of 4 · finalist",
+        T, "05", "aws-hoyabit", "python · aws · llm agent", "team of 4 · finalist",
         [("my part", "agent loop, 15 data tools, report schema"),
          ("measured", "19/19 test phrasings routed by rules"),
          ("caveat", "information tool, not investment advice")],
@@ -431,7 +442,7 @@ def hoyabit(T):
     )
 
 
-CARDS = {"zk": zk, "fx": fx, "lending": lending, "mvdis": mvdis, "statsbot": statsbot, "hoyabit": hoyabit}
+CARDS = {"zk": zk, "lending": lending, "mvdis": mvdis, "statsbot": statsbot, "hoyabit": hoyabit}
 
 
 ZH.update({
@@ -442,6 +453,8 @@ ZH.update({
     "capstone · NSTC grant": "專題 · 國科會大專生計畫", "re-test · fork": "重新檢驗 · fork",
     "solo · live": "個人 · 運行中", "team of 2": "2 人團隊", "team of 4 · finalist": "4 人團隊 · 決賽",
     # zk
+    "Each client update carries a zero-knowledge\nproof that it was clipped and noised; the\nserver aggregates only verified updates.":
+        "每份 client 更新都附上零知識證明，\n證明它確實經過 clipping 並加入噪聲；\nserver 只聚合驗證通過的更新。",
     "clients": "客戶端", "verify π": "驗證 π", "aggregate": "聚合",
     " honest update   ": " 正常更新   ", " in-bound attack": " 範圍內攻擊", " — both verify": " — 都通過驗證",
     "150/150 per-update Halo2 proofs verify": "150/150 份逐更新 Halo2 證明全數通過",

@@ -16,8 +16,8 @@ NAME = "Chi-Jiun Wong"
 NAME_X, NAME_Y, NAME_SIZE = 44, 128, 46
 LINES = [
     ("CS undergrad at NCU, minor in finance.", "fg"),
-    ("I build forecasting experiments, verifiable-ML", "muted"),
-    ("prototypes, and small bots that run on free tiers.", "muted"),
+    ("I build verifiable-ML prototypes, and small", "muted"),
+    ("bots that run on free tiers.", "muted"),
 ]
 FLAP_GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+<>=/?"
 
@@ -217,7 +217,7 @@ def build(theme: str) -> str:
     return document(
         W, H, "".join(body), "".join(css),
         tr("Chi-Jiun Wong (翁祺鈞)"),
-        "CS undergrad at NCU, minor in finance. Builds forecasting experiments, verifiable-ML prototypes, "
+        "CS undergrad at NCU, minor in finance. Builds verifiable-ML prototypes "
         "and small bots that run on free tiers. Animated banner: a noisy series, a smoothed signal and a "
         "deliberately wide 95% forecast band.",
     )
@@ -225,8 +225,8 @@ def build(theme: str) -> str:
 
 ZH.update({
     "CS undergrad at NCU, minor in finance.": "中央大學資工系，輔系財金。",
-    "I build forecasting experiments, verifiable-ML": "做匯率預測實驗、可驗證機器學習原型，",
-    "prototypes, and small bots that run on free tiers.": "還有幾個跑在免費額度上的小工具。",
+    "I build verifiable-ML prototypes, and small": "做可驗證機器學習的原型，",
+    "bots that run on free tiers.": "也做幾個跑在免費額度上的小工具。",
     "— noise   ": "— 雜訊   ", "— smoothed signal   ": "— 平滑訊號   ", "— what actually happened": "— 實際走勢",
     "now": "現在", "now ": "現在 ", "95% band": "95% 區間",
     "verifiable DP for federated learning · NSTC undergrad research": "可驗證差分隱私聯邦學習 · 國科會大專生計畫",
