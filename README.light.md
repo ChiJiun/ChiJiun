@@ -8,6 +8,8 @@ My NSTC undergraduate research project at National Central University (Taiwan) i
 
 Every number on this page comes from the linked repo's README or result files, and each one sits next to its limit. Team projects describe only my part.
 
+**Contact** · [0311gino@gmail.com](mailto:0311gino@gmail.com) · [linktr.ee/0311gino](https://linktr.ee/0311gino)
+
 ### Selected work
 
 <a href="https://github.com/ChiJiun/zk-verifiable-dp-fl"><img alt="zk-verifiable-dp-fl: 150/150 per-update Halo2 proofs verify on synthetic data; 300/300 in-bound attacks verify too." src="./assets/card-zk-light.svg" width="100%"></a>

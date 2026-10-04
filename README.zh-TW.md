@@ -8,6 +8,8 @@
 
 這頁上的數字都直接取自各 repo 的 README 或實驗結果，每個數字旁邊都寫出它的限制。團隊專案只寫我負責的部分。
 
+**聯絡** · [0311gino@gmail.com](mailto:0311gino@gmail.com) · [linktr.ee/0311gino](https://linktr.ee/0311gino)
+
 ### 精選作品
 
 <a href="https://github.com/ChiJiun/zk-verifiable-dp-fl"><picture><source media="(prefers-color-scheme: dark)" srcset="./assets/card-zk-zh-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./assets/card-zk-zh-light.svg"><img alt="zk-verifiable-dp-fl：合成資料上 150/150 份逐更新 Halo2 證明通過；範圍內攻擊也 300/300 通過。" src="./assets/card-zk-zh-dark.svg" width="100%"></picture></a>
