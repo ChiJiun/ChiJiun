@@ -21,15 +21,15 @@
 <a href="https://github.com/ChiJiun/mvdis-watch"><picture><source media="(prefers-color-scheme: dark)" srcset="./assets/card-mvdis-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./assets/card-mvdis-light.svg"><img alt="mvdis-watch: 360 station and license-class combinations rescanned on one Cloudflare Worker, free tier." src="./assets/card-mvdis-dark.svg" width="49%"></picture></a>
 </p>
 <p>
-<a href="https://github.com/ChiJiun/StatsDiscordBot"><picture><source media="(prefers-color-scheme: dark)" srcset="./assets/card-statsbot-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./assets/card-statsbot-light.svg"><img alt="StatsDiscordBot: feedback on statistics homework for about 150 students; built with one teammate." src="./assets/card-statsbot-dark.svg" width="49%"></picture></a>
-<a href="https://github.com/ChiJiun/aws-hoyabit"><picture><source media="(prefers-color-scheme: dark)" srcset="./assets/card-hoyabit-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./assets/card-hoyabit-light.svg"><img alt="aws-hoyabit: crypto market analysis agent, team of four, hackathon finalist." src="./assets/card-hoyabit-dark.svg" width="49%"></picture></a>
+<a href="https://github.com/ChiJiun/StatsDiscordBot"><picture><source media="(prefers-color-scheme: dark)" srcset="./assets/card-statsbot-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./assets/card-statsbot-light.svg"><img alt="StatsDiscordBot: statistics homework feedback bot used by about 150 students; I built the bot core: login, HTML parsing, LLM calls, storage and Drive sync." src="./assets/card-statsbot-dark.svg" width="49%"></picture></a>
+<a href="https://github.com/ChiJiun/aws-hoyabit"><picture><source media="(prefers-color-scheme: dark)" srcset="./assets/card-hoyabit-dark.svg"><source media="(prefers-color-scheme: light)" srcset="./assets/card-hoyabit-light.svg"><img alt="aws-hoyabit: crypto market analysis agent; my part was the agent loop, parallel prefetch, question routing, 15 data tools and the report schema." src="./assets/card-hoyabit-dark.svg" width="49%"></picture></a>
 </p>
 
 ### Also
 
 | repo | what | my part |
 |:--|:--|:--|
-| [NCU_AI_Guidance](https://github.com/ChiJiun/NCU_AI_Guidance) | 中央大學選課助理：知識圖譜 + 多代理人 RAG，涵蓋 38 個系所的 459 份大專生研究計畫 | 5 人團隊之一：負責部署（Firebase／Render／Cloudinary）、Google 登入、PostgreSQL 聊天紀錄與監控 |
+| [NCU_AI_Guidance](https://github.com/ChiJiun/NCU_AI_Guidance) | 中央大學選課助理平台（團隊專案） | 前端部署到 Firebase、API 部署到 Render、研究計畫 PDF 移到 Cloudinary；Firebase Google 登入；已登入使用者的聊天紀錄存進 PostgreSQL；Qdrant／Cloudinary 監控頁 |
 | [usdt-invoice-pulse](https://github.com/ChiJiun/usdt-invoice-pulse) | 每日 USDT/TWD 手續費目標與發票紀錄 dashboard，預設不送出真實訂單 | 獨立完成 |
 | [worldquant](https://github.com/ChiJiun/worldquant) | WorldQuant BRAIN API simulator，搭配一次只改一個變因的 alpha 研究流程 | 獨立完成 |
 | [onework](https://github.com/ChiJiun/onework) | Spring Boot + PostgreSQL 會議室預約 API，內含衝突防護、審核流程與 Testcontainers | 獨立完成 |

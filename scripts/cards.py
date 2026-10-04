@@ -17,7 +17,7 @@ W, H = 420, 290
 VX, VY = 22, 66  # viz origin
 ROW_COLORS = {
     "measured": "ok", "finding": "ok", "used by": "ok",
-    "decision": "blue", "cadence": "blue", "budget": "blue", "scope": "blue",
+    "decision": "blue", "my part": "accent", "cadence": "blue", "budget": "blue", "scope": "blue",
     "does": "blue", "keeps": "blue", "design": "blue",
     "caveat": "bad",
 }
@@ -355,13 +355,14 @@ def statsbot(T):
     return frame(
         T, "05", "StatsDiscordBot", "python · discord.py · openai · sqlite", "team of 2",
         [("used by", "~150 students in statistics courses"),
-         ("does", "LLM feedback on English + stats content"),
+         ("my part", "bot core: login, parsing, LLM calls, Drive"),
          ("keeps", "every attempt, plus an HTML report")],
         "".join(v), "".join(css),
         "StatsDiscordBot: Discord bot that gives feedback on statistics free-response homework",
         "Students upload HTML answers in a class channel; the bot parses them, asks an LLM for feedback on "
         "English expression and statistical content, logs every attempt to SQLite and writes an HTML report that "
-        "is synced to Google Drive. Used by about 150 students in statistics courses. Built with one teammate.",
+        "is synced to Google Drive. Used by about 150 students in statistics courses. Team of two; my part was the "
+        "bot itself: login and roles, HTML parsing, LLM calls with timeouts, SQLite, local and Drive storage, admin commands.",
     )
 
 
@@ -416,15 +417,16 @@ def hoyabit(T):
 
     return frame(
         T, "06", "aws-hoyabit", "python · aws · llm agent", "team of 4 · finalist",
-        [("measured", "19/19 test phrasings routed by rules"),
-         ("design", "a failed source never cancels the rest"),
+        [("my part", "agent loop, 15 data tools, report schema"),
+         ("measured", "19/19 test phrasings routed by rules"),
          ("caveat", "information tool, not investment advice")],
         "".join(v), "".join(css),
         "aws-hoyabit: crypto market analysis agent (hackathon finalist)",
         "Phase A fetches eight sources in parallel with bounded concurrency, and one failing source does not "
         "cancel the others. Phase B lets an agent fill gaps until 20% of the time budget remains, then it converges "
         "on a report where every claim cites a source. Question-type routing handled 19 of 19 test phrasings with "
-        "rules alone. Team of four; HOYA BIT track finalist.",
+        "rules alone. Team of four (HOYA BIT track finalist); my part was the agent loop, the parallel prefetch, "
+        "question routing, the data tools, the report schema and the frontend.",
     )
 
 
