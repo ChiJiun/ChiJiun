@@ -2,7 +2,7 @@
 
 <p align="right"><sub><b>English</b> · <a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.zh-TW.light.md">繁體中文</a> &nbsp;│&nbsp; <a href="https://github.com/ChiJiun">Auto</a> · <a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.dark.md">Dark</a> · <b>Light</b></sub></p>
 
-<img alt="Chi-Jiun Wong (翁祺鈞). CS undergrad at NCU, minor in finance. Verifiable-ML prototypes and small bots that run on free tiers." src="./assets/hero-light.svg" width="100%">
+<img alt="The world is one giant makeshift troupe, so fake it till you make it. Chi-Jiun Wong (翁祺鈞). CS undergrad at NCU, minor in finance. Verifiable-ML prototypes and small bots that run on free tiers." src="./assets/hero-light.svg" width="100%">
 
 My NSTC undergraduate research project at National Central University (Taiwan) is verifiable differential privacy for federated learning. Outside it I build small tools that run on free tiers.
 
@@ -46,7 +46,3 @@ Every number on this page comes from the linked repo's README or result files, a
 - `python scripts/build.py` regenerates the images; `python scripts/readme.py` writes the four README variants.
 
 </details>
-
-<br>
-
-<p align="center"><sub><i>“The world is one giant makeshift troupe.” (a Chinese internet saying)</i><br><i>Fake it till you make it.</i></sub></p>

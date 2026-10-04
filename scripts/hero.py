@@ -1,8 +1,8 @@
-"""Hero banner: split-flap name, typed intro, noise -> smoothed signal -> forecast band.
+"""Hero banner: motto, split-flap name, typed intro, and the zk-verifiable-dp-fl mechanism.
 
-The band is drawn honestly wide (sigma * sqrt(h)), and one of the three "realized"
-paths that loop inside it is chosen to poke out of the 95% band — which is what
-a 95% band is supposed to let happen about one time in twenty.
+Right side loops one client update through the pipeline the research project proves:
+raw Δw -> clipped to ±C (the cut-off part shows as a dashed ghost) -> DP noise added
+-> wrapped in a proof -> verified. Background traces are noise, drifting.
 """
 from __future__ import annotations
 
@@ -39,6 +39,10 @@ def walk(n: int, rng: random.Random, sigma: float) -> list[float]:
     return w
 
 
+def clamp_h(v: float, B: float) -> float:
+    return max(3.0, min(v, B + 10))
+
+
 def build(theme: str) -> str:
     T = THEMES[theme]
     css, body = [], []
@@ -60,7 +64,7 @@ def build(theme: str) -> str:
 
     rng = random.Random(7)
     step, n = 6, W // 6
-    for i, (base, amp, dur, op) in enumerate([(160, 3.4, 70, 0.6), (196, 2.6, 95, 0.45), (128, 2.2, 130, 0.35)]):
+    for i, (base, amp, dur, op) in enumerate([(160, 3.4, 70, 0.4), (196, 2.6, 95, 0.3), (128, 2.2, 130, 0.22)]):
         b = bridge(n, rng, amp)
         pts = [(k * step, base + b[k % n]) for k in range(2 * n + 1)]
         body.append(
@@ -70,79 +74,80 @@ def build(theme: str) -> str:
         )
     body.append(f'<rect width="{W}" height="{H}" fill="url(#scrim)"/>')
 
-    # ---- signal: EMA of a walk, then a sqrt(h) fan --------------------------------
-    x_start, x0, x1 = 520, 680, 812
-    raw = walk(65, random.Random(11), 3.2)
-    ema, e = [], raw[0]
-    for v in raw:
-        e = 0.82 * e + 0.18 * v
-        ema.append(e)
-    sig = [(x_start + i * (x0 - x_start) / (len(ema) - 1), 158 + 1.3 * (v - ema[-1])) for i, v in enumerate(ema)]
-    y0 = 158.0
-    C95 = 66
-    body.append(
-        f'<path class="draw" style="animation-delay:1.4s;animation-duration:1.6s" pathLength="1" '
-        f'stroke-dasharray="1" d="{smooth_path(sig[::3] + [sig[-1]])}" stroke="{T["accent"]}" '
-        f'stroke-width="2.2" stroke-linecap="round"/>'
-    )
+    # ---- mechanism: one client update, clipped, noised, proven ---------------------
+    # Same story as zk-verifiable-dp-fl: Δw -> clip to ±C -> + DP noise -> π -> verified.
+    P = 8.0
+    bx0, pitch, bw, base, B = 546, 18, 10, 166, 40
+    vrng = random.Random(21)
+    raw = [vrng.choice([-1, 1]) * vrng.uniform(14, 74) for _ in range(14)]
+    S, A = T["subtle"], T["accent"]
 
-    def band(c: float) -> str:
-        m = 24
-        up = [(x0 + (x1 - x0) * k / m, y0 - c * (k / m) ** 0.5) for k in range(m + 1)]
-        lo = [(x, 2 * y0 - y) for x, y in reversed(up)]
-        return poly(up + lo) + "Z"
+    def scale(h: float, r: float) -> float:
+        return max(0.08, h / abs(r))
 
-    body.append('<g class="cone fb" style="animation-delay:3s">')
-    for c, op in [(C95, 0.10), (C95 * 0.66, 0.13), (C95 * 0.34, 0.18)]:
-        body.append(f'<path d="{band(c)}" fill="{T["accent"]}" fill-opacity="{op}"/>')
-    body.append(f'<path d="{band(C95)}" stroke="{T["accent"]}" stroke-opacity=".45" stroke-width="1" stroke-dasharray="2 3"/>')
-    body.append("</g>")
-
-    # three realized futures; #2 escapes the 95% band on purpose
-    sigma = C95 / (1.96 * (44 ** 0.5))
-    chosen, seed = [], 100
-    wants = [False, False, True]
-    while len(chosen) < 3:
-        w = walk(44, random.Random(seed), sigma)
-        seed += 1
-        k_max = max(abs(v) / (C95 * ((i / 44) ** 0.5) + 1e-9) for i, v in enumerate(w) if i)
-        escapes = k_max > 1.08
-        tame = k_max < 0.85
-        if (wants[len(chosen)] and escapes and k_max < 1.4) or (not wants[len(chosen)] and tame):
-            chosen.append(w)
-    for i, w in enumerate(chosen):
-        pts = [(x0 + j * (x1 - x0) / 44, y0 + v) for j, v in enumerate(w)]
-        base = "" if i == 0 else ";opacity:0"
-        body.append(
-            f'<path class="real" style="animation-delay:{3.6 + 3 * i:.1f}s{base}" pathLength="1" stroke-dasharray="1" '
-            f'd="{poly(pts)}" stroke="{T["fg"]}" stroke-opacity=".85" stroke-width="1.3" stroke-linejoin="round"/>'
+    body.append(f'<g class="fade" style="animation-delay:.6s">'
+                f'<path d="M538,{base - B} H812 M538,{base + B} H812" stroke="{A}" stroke-opacity=".55" stroke-dasharray="3 3"/>'
+                f'<path d="M538,{base}.5 H812" stroke="{T["line"]}"/>'
+                + text(812, base - B - 5, "+C", 9.5, "accent", anchor="end", T=T)
+                + text(812, base + B + 13, "−C", 9.5, "accent", anchor="end", T=T) + "</g>")
+    for i, r in enumerate(raw):
+        x = bx0 + i * pitch
+        h = abs(r)
+        y = base - h if r > 0 else base
+        c = scale(min(h, B), r)
+        noisy = [clamp_h(min(h, B) + vrng.gauss(0, 7), B) for _ in range(3)]
+        a1, a2, f = (scale(v, r) for v in noisy)
+        origin = "bottom" if r > 0 else "top"
+        css.append(
+            f"@keyframes b{i}{{0%{{transform:scaleY(0);fill:{S}}}12%,22%{{transform:scaleY(1)}}"
+            f"30%,38%{{transform:scaleY({c:.3f});fill:{S}}}44%{{transform:scaleY({a1:.3f})}}50%{{transform:scaleY({a2:.3f})}}"
+            f"56%,92%{{transform:scaleY({f:.3f});fill:{A};opacity:1}}98%,100%{{transform:scaleY({f:.3f});fill:{A};opacity:0}}}}"
         )
+        body.append(f'<rect class="bar" style="animation-name:b{i};transform-origin:{origin};transform:scaleY({f:.3f})" '
+                    f'x="{x}" y="{y:.1f}" width="{bw}" height="{h:.1f}" rx="2" fill="{A}"/>')
+        if h > B:
+            body.append(f'<rect class="ghost" x="{x - .5}" y="{y - .5:.1f}" width="{bw + 1}" height="{h + 1:.1f}" rx="2" '
+                        f'stroke="{T["muted"]}" stroke-dasharray="2 2"/>')
 
-    body.append(
-        f'<circle class="ring fb" cx="{x0}" cy="{y0}" r="4" stroke="{T["accent"]}" stroke-width="1.5"/>'
-        f'<circle class="pop fb" style="animation-delay:2.9s" cx="{x0}" cy="{y0}" r="4" fill="{T["accent"]}"/>'
-    )
-    body.append(
-        f'<g class="fade" style="animation-delay:3.4s">'
-        + text(x0, y0 - 14, "now", 10, "muted", anchor="middle", T=T)
-        + text(x1, y0 - C95 - 10, "95% band", 10, "accent", anchor="end", T=T)
-        + text(x1, y0 + C95 + 20, "h = 30d", 10, "subtle", anchor="end", T=T)
-        + "</g>"
-    )
+    box_y, box_h = base - B - 22, 2 * B + 44
+    body.append(f'<rect class="proof" pathLength="1" stroke-dasharray="1" x="538" y="{box_y}" width="{14 * pitch + 2}" '
+                f'height="{box_h}" rx="8" stroke="{T["ok"]}" stroke-width="1.4"/>')
+    badge = tr("π · verified")
+    bwid = text_w(badge, 10.5) + 18
+    body.append(f'<g class="badge fb"><rect x="{812 - bwid:.1f}" y="{box_y + box_h - 11}" width="{bwid:.1f}" height="22" rx="11" '
+                f'fill="{T["panel"]}" stroke="{T["ok"]}"/>'
+                + text(812 - bwid / 2, box_y + box_h + 4, badge, 10.5, "ok", 500, anchor="middle", T=T) + "</g>")
 
-    # legend, top right: says what each mark is
-    lg = (
-        f'<text{tc_attr()} x="{x1}" y="34" font-size="10.5" font-weight="400" text-anchor="end" fill="{T["subtle"]}">'
-        f'<tspan fill="{T["subtle"]}">{esc(tr("— noise   "))}</tspan>'
-        f'<tspan fill="{T["accent"]}">{esc(tr("— smoothed signal   "))}</tspan>'
-        f'<tspan fill="{T["fg"]}">{esc(tr("— what actually happened"))}</tspan></text>'
+    # pipeline header: each step lights while it happens
+    steps = [("Δw", 2, 24), ("clip", 22, 40), ("+ noise", 38, 58), ("π", 58, 92), ("verified", 64, 92)]
+    x = 544
+    for k, (label, on, off) in enumerate(steps):
+        lab = tr(label)
+        body.append(text(x, 62, lab, 11, "subtle", T=T))
+        css.append(f"@keyframes s{k}{{0%,{on - 1}%{{opacity:0}}{on}%,{off}%{{opacity:1}}{off + 3}%,100%{{opacity:0}}}}")
+        col = "ok" if label in ("π", "verified") else "accent"
+        body.append(f'<g class="step" style="animation-name:s{k}">{text(x, 62, lab, 11, col, 500, T=T)}</g>')
+        x += text_w(lab, 11)
+        if k < len(steps) - 1:
+            body.append(text(x + 5, 62, "→", 11, "subtle", T=T))
+            x += 26
+    css.append(
+        f".bar{{transform-box:fill-box;animation:{P}s {EASE} .8s infinite both}}"
+        f".ghost{{opacity:0;animation:ghost {P}s linear .8s infinite both}}"
+        "@keyframes ghost{0%,10%{opacity:0}14%,32%{opacity:.9}40%,100%{opacity:0}}"
+        f".proof{{animation:proof {P}s {EASE_IO} .8s infinite both}}"
+        "@keyframes proof{0%,58%{stroke-dashoffset:1;opacity:1}68%,92%{stroke-dashoffset:0;opacity:1}98%,100%{stroke-dashoffset:0;opacity:0}}"
+        f".badge{{transform-origin:center;animation:badge {P}s {EASE} .8s infinite both}}"
+        "@keyframes badge{0%,64%{transform:scale(0);opacity:0}69%,92%{transform:none;opacity:1}98%,100%{opacity:0}}"
+        f".step{{opacity:0;animation:{P}s linear .8s infinite both}}"
     )
-    body.append(f'<g class="fade" style="animation-delay:3.8s">{lg}</g>')
     body.append("</g>")
 
-    # ---- name: split-flap ------------------------------------------------------------
+    # ---- motto ---------------------------------------------------------------------------
     adv = NAME_SIZE * 0.6
-    body.append(text(NAME_X, 54, "github.com/ChiJiun", 12, "subtle", cls="fade", T=T))
+    body.append(f'<g class="fade" style="animation-delay:.1s"><rect x="{NAME_X}" y="30" width="3" height="38" rx="1.5" fill="{T["accent"]}"/>'
+                + text(NAME_X + 14, 45, "The world is one giant makeshift troupe,", 13, "muted", T=T)
+                + text(NAME_X + 14, 64, "so fake it till you make it.", 13, "accent", 500, T=T) + "</g>")
     body.append('<g clip-path="url(#flap)">')
     frng = random.Random(3)
     nflap = 7
@@ -218,8 +223,8 @@ def build(theme: str) -> str:
         W, H, "".join(body), "".join(css),
         tr("Chi-Jiun Wong (翁祺鈞)"),
         "CS undergrad at NCU, minor in finance. Builds verifiable-ML prototypes "
-        "and small bots that run on free tiers. Animated banner: a noisy series, a smoothed signal and a "
-        "deliberately wide 95% forecast band.",
+        "and small bots that run on free tiers. Motto: the world is one giant makeshift troupe, so fake it "
+        "till you make it. Animated banner: a client update is clipped, noised and proven, as in zk-verifiable-dp-fl.",
     )
 
 
@@ -227,6 +232,9 @@ ZH.update({
     "CS undergrad at NCU, minor in finance.": "中央大學資工系，輔系財金。",
     "I build verifiable-ML prototypes, and small": "做可驗證機器學習的原型，",
     "bots that run on free tiers.": "也做幾個跑在免費額度上的小工具。",
+    "The world is one giant makeshift troupe,": "這個世界就是一個巨大的草台班子，",
+    "so fake it till you make it.": "所以 fake it till you make it。",
+    "π · verified": "π · 驗證通過", "+ noise": "+ 噪聲", "verified": "驗證通過",
     "— noise   ": "— 雜訊   ", "— smoothed signal   ": "— 平滑訊號   ", "— what actually happened": "— 實際走勢",
     "now": "現在", "now ": "現在 ", "95% band": "95% 區間",
     "verifiable DP for federated learning · NSTC undergrad research": "可驗證差分隱私聯邦學習 · 國科會大專生計畫",

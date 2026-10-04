@@ -57,7 +57,7 @@ CARDS = [
 
 TEXT = {
     "en": dict(
-        hero_alt="Chi-Jiun Wong (翁祺鈞). CS undergrad at NCU, minor in finance. Verifiable-ML prototypes and small bots that run on free tiers.",
+        hero_alt="The world is one giant makeshift troupe, so fake it till you make it. Chi-Jiun Wong (翁祺鈞). CS undergrad at NCU, minor in finance. Verifiable-ML prototypes and small bots that run on free tiers.",
         intro=("My NSTC undergraduate research project at National Central University (Taiwan) is "
                "verifiable differential privacy for federated learning. Outside it I build small tools "
                "that run on free tiers.\n\n"
@@ -84,7 +84,7 @@ TEXT = {
         ],
     ),
     "zh": dict(
-        hero_alt="翁祺鈞 Chi-Jiun Wong。中央大學資工系，輔系財金。做可驗證機器學習的原型，也做幾個跑在免費額度上的小工具。",
+        hero_alt="這個世界就是一個巨大的草台班子，所以 fake it till you make it。翁祺鈞 Chi-Jiun Wong。中央大學資工系，輔系財金。做可驗證機器學習的原型，也做幾個跑在免費額度上的小工具。",
         intro=("目前在做國科會大專生計畫「可驗證差分隱私聯邦學習」；其餘時間做幾個跑在免費額度上的小工具。\n\n"
                "這頁上的數字都直接取自各 repo 的 README 或實驗結果，每個數字旁邊都寫出它的限制。團隊專案只寫我負責的部分。"),
         selected="精選作品", also="其他", activity="活動",
@@ -125,8 +125,7 @@ def render(lang, theme):
     out += ["", f"### {t['also']}", "", t["also_head"], "|:--|:--|:--|", *t["also_rows"], "",
             f"### {t['activity']}", "", img("activity", lang, theme, t["activity_alt"]), "",
             "<details>", f"<summary><sub>{t['how']}</sub></summary>", "<br>", "",
-            *[f"- {x}" for x in t["how_items"]], "", "</details>", "", "<br>", "",
-            f'<p align="center"><sub><i>{t["quote"]}</i><br><i>Fake it till you make it.</i></sub></p>', ""]
+            *[f"- {x}" for x in t["how_items"]], "", "</details>", ""]
     return "\n".join(out)
 
 
