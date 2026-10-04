@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import random
 
-from svgkit import EASE, EASE_IO, THEMES, document, esc, mono_w, poly, smooth_path, text, write
+from svgkit import (EASE, EASE_IO, THEMES, ZH, document, esc, mono_w, poly, set_lang, smooth_path, tc_attr, text,
+                    text_w, tr, write)
 
 W, H = 840, 300
 NAME = "Chi-Jiun Wong"
@@ -131,10 +132,10 @@ def build(theme: str) -> str:
 
     # legend, top right: says what each mark is
     lg = (
-        f'<text x="{x1}" y="34" font-size="10.5" font-weight="400" text-anchor="end" fill="{T["subtle"]}">'
-        f'<tspan fill="{T["subtle"]}">— noise   </tspan>'
-        f'<tspan fill="{T["accent"]}">— smoothed signal   </tspan>'
-        f'<tspan fill="{T["fg"]}">— what actually happened</tspan></text>'
+        f'<text{tc_attr()} x="{x1}" y="34" font-size="10.5" font-weight="400" text-anchor="end" fill="{T["subtle"]}">'
+        f'<tspan fill="{T["subtle"]}">{esc(tr("— noise   "))}</tspan>'
+        f'<tspan fill="{T["accent"]}">{esc(tr("— smoothed signal   "))}</tspan>'
+        f'<tspan fill="{T["fg"]}">{esc(tr("— what actually happened"))}</tspan></text>'
     )
     body.append(f'<g class="fade" style="animation-delay:3.8s">{lg}</g>')
     body.append("</g>")
@@ -164,7 +165,8 @@ def build(theme: str) -> str:
     size, y = 15, 172
     t = 1.0
     for i, (line, col) in enumerate(LINES):
-        lw = mono_w(line, size)
+        line = tr(line)
+        lw = text_w(line, size)
         body.append(text(NAME_X, y, line, size, col, T=T))
         dur = len(line) * 0.022
         body.append(
@@ -174,16 +176,16 @@ def build(theme: str) -> str:
         )
         t += dur + 0.12
         y += 24
-    last_w = mono_w(LINES[-1][0], size)
+    last_w = text_w(tr(LINES[-1][0]), size)
     body.append(
         f'<rect class="caret" style="animation-delay:{t:.2f}s" x="{NAME_X + last_w + 4:.1f}" '
         f'y="{y - 24 - 13}" width="8" height="16" fill="{T["accent"]}"/>'
     )
 
     now = (
-        f'<text x="{NAME_X}" y="266" font-size="12" font-weight="400" fill="{T["muted"]}">'
-        f'<tspan fill="{T["accent"]}" font-weight="500">now </tspan>'
-        f"{esc('verifiable DP for federated learning · NSTC undergrad research')}</text>"
+        f'<text{tc_attr()} x="{NAME_X}" y="266" font-size="12" font-weight="400" fill="{T["muted"]}">'
+        f'<tspan fill="{T["accent"]}">{esc(tr("now "))}</tspan>'
+        f"{esc(tr('verifiable DP for federated learning · NSTC undergrad research'))}</text>"
     )
     body.append(f'<g class="fade" style="animation-delay:{t + 0.2:.2f}s">{now}</g>')
 
@@ -214,16 +216,30 @@ def build(theme: str) -> str:
     )
     return document(
         W, H, "".join(body), "".join(css),
-        "Chi-Jiun Wong (翁祺鈞)",
+        tr("Chi-Jiun Wong (翁祺鈞)"),
         "CS undergrad at NCU, minor in finance. Builds forecasting experiments, verifiable-ML prototypes, "
         "and small bots that run on free tiers. Animated banner: a noisy series, a smoothed signal and a "
         "deliberately wide 95% forecast band.",
     )
 
 
+ZH.update({
+    "CS undergrad at NCU, minor in finance.": "中央大學資工系，輔系財金。",
+    "I build forecasting experiments, verifiable-ML": "做匯率預測實驗、可驗證機器學習原型，",
+    "prototypes, and small bots that run on free tiers.": "還有幾個跑在免費額度上的小工具。",
+    "— noise   ": "— 雜訊   ", "— smoothed signal   ": "— 平滑訊號   ", "— what actually happened": "— 實際走勢",
+    "now": "現在", "now ": "現在 ", "95% band": "95% 區間",
+    "verifiable DP for federated learning · NSTC undergrad research": "可驗證差分隱私聯邦學習 · 國科會大專生計畫",
+    "Chi-Jiun Wong (翁祺鈞)": "翁祺鈞 Chi-Jiun Wong",
+})
+
+
 def main():
-    for th in THEMES:
-        write("hero", th, build(th))
+    for lang in ("en", "zh"):
+        set_lang(lang)
+        for th in THEMES:
+            write("hero", th, build(th))
+    set_lang("en")
 
 
 if __name__ == "__main__":

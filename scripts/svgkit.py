@@ -43,6 +43,33 @@ CJK = "TC"   # Noto Sans TC (OFL), only used for three glyphs in the hero
 FIRA = {400: "FiraCode-Regular.ttf", 500: "FiraCode-Medium.ttf", 700: "FiraCode-Bold.ttf"}
 
 
+LANG = "en"           # set by the builders; "zh" renders Traditional Chinese
+ZH: dict[str, str] = {}  # English source string -> zh-TW, registered by each builder
+
+
+def set_lang(lang: str) -> None:
+    global LANG
+    LANG = lang
+
+
+def tr(s: str) -> str:
+    return ZH.get(s, s) if LANG == "zh" else s
+
+
+def is_cjk(s: str) -> bool:
+    return any(ord(c) >= 0x2E80 for c in s)
+
+
+def text_w(s: str, size: float) -> float:
+    """Advance estimate: Fira Code is 0.6 em; CJK glyphs are 1 em."""
+    return sum(size * (1.0 if ord(c) >= 0x2E80 else 0.6) for c in s)
+
+
+def tc_attr() -> str:
+    """class attribute for hand-built <text> elements that may hold translated tspans."""
+    return ' class="tc"' if LANG == "zh" else ""
+
+
 def esc(s: str) -> str:
     return html.escape(s, quote=True)
 
@@ -76,7 +103,7 @@ def _subset_b64(path: Path, chars: str, wght: int | None = None) -> str:
 
 
 def _cjk_font() -> Path | None:
-    for p in (FONT_DIR / "NotoSansTC-VF.ttf", Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts" / "NotoSansTC-VF.ttf"):
+    for p in (FONT_DIR / "NotoSansTC-subset.woff2", FONT_DIR / "NotoSansTC-VF.ttf", Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts" / "NotoSansTC-VF.ttf"):
         if p.exists():
             return p
     return None
@@ -134,13 +161,16 @@ def document(w: int, h: int, body: str, css: str, title: str, desc: str) -> str:
 
 def write(name: str, theme: str, svg: str) -> Path:
     ASSETS.mkdir(exist_ok=True)
-    p = ASSETS / f"{name}-{theme}.svg"
+    p = ASSETS / (f"{name}-zh-{theme}.svg" if LANG == "zh" else f"{name}-{theme}.svg")
     p.write_text(svg, encoding="utf-8", newline="\n")
     return p
 
 
 def text(x, y, s, size=12, fill="fg", weight=400, anchor="start", cls="", extra="", T=None) -> str:
     color = T[fill] if T and fill in T else fill
+    s = tr(s)
+    if is_cjk(s):
+        cls = f"{cls} tc".strip()
     c = f' class="{cls}"' if cls else ""
     a = f' text-anchor="{anchor}"' if anchor != "start" else ""
     return (
@@ -171,6 +201,6 @@ def clamp(v, lo, hi):
 
 
 __all__ = [
-    "THEMES", "EASE", "EASE_IO", "esc", "mono_w", "document", "write", "text",
+    "THEMES", "EASE", "tr", "set_lang", "is_cjk", "text_w", "tc_attr", "ZH", "EASE_IO", "esc", "mono_w", "document", "write", "text",
     "smooth_path", "poly", "clamp", "math", "ROOT", "ASSETS",
 ]

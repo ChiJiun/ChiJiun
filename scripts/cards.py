@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import random
 
-from svgkit import EASE, EASE_IO, THEMES, document, esc, mono_w, poly, smooth_path, text, write
+from svgkit import (EASE, EASE_IO, THEMES, ZH, document, esc, mono_w, poly, set_lang, smooth_path, tc_attr, text,
+                    text_w, tr, write)
 
 W, H = 420, 290
 VX, VY = 22, 66  # viz origin
@@ -51,7 +52,7 @@ def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc):
     b = [f'<rect x=".5" y=".5" width="{W-1}" height="{H-1}" rx="12" fill="{T["panel"]}" stroke="{T["line"]}"/>']
     b.append(f'<g class="in">{text(22, 34, idx, 12, "accent", 500, T=T)}{text(50, 34, title, 15, "fg", 700, T=T)}</g>')
     b.append(f'<g class="in" style="{d(.08)}">{text(22, 54, tags, 11, "muted", T=T)}</g>')
-    cw = mono_w(chip, 10.5) + 16
+    cw = text_w(tr(chip), 10.5) + 16
     b.append(
         f'<g class="in" style="{d(.12)}"><rect x="{W-22-cw:.1f}" y="20" width="{cw:.1f}" height="20" rx="10" '
         f'stroke="{T["line"]}"/>{text(W-22-cw/2, 34, chip, 10.5, "muted", anchor="middle", T=T)}</g>'
@@ -66,8 +67,8 @@ def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc):
             + text(100, y, value, 11, "fg", T=T)
             + "</g>"
         )
-        assert mono_w(value, 11) <= W - 22 - 100, f"row too long: {value}"
-    return document(W, H, "".join(b), COMMON_CSS + css, alt, desc)
+        assert text_w(tr(value), 11) <= W - 22 - 100 + 4, f"row too long: {tr(value)}"
+    return document(W, H, "".join(b), COMMON_CSS + css, tr(alt), tr(desc))
 
 
 # ------------------------------------------------------------------------------------------
@@ -119,9 +120,9 @@ def zk(T):
                      f'width="10" height="10" rx="2" fill="{T["muted"]}"/>')
         v.append(f'<g class="pk" style="animation-name:zk{lane};animation-delay:{1 + delay:.2f}s">{inner}</g>')
 
-    legend = (f'<text x="0" y="134" font-size="9.5" font-weight="400" fill="{T["muted"]}">'
-              f'<tspan fill="{T["ok"]}">■</tspan> honest update   <tspan fill="{T["bad"]}">■</tspan> in-bound attack'
-              f'<tspan fill="{T["subtle"]}"> — both verify</tspan></text>')
+    legend = (f'<text{tc_attr()} x="0" y="134" font-size="9.5" font-weight="400" fill="{T["muted"]}">'
+              f'<tspan fill="{T["ok"]}">■</tspan>{esc(tr(" honest update   "))}<tspan fill="{T["bad"]}">■</tspan>{esc(tr(" in-bound attack"))}'
+              f'<tspan fill="{T["subtle"]}">{esc(tr(" — both verify"))}</tspan></text>')
     v.append(f'<g class="fade" style="{d(.8)}">{legend}</g>')
 
     return frame(
@@ -180,8 +181,8 @@ def fx(T):
     v.append(f'<path class="fade march" style="{d(1.2)}" d="M{ox},{thr:.1f} H376" stroke="{T["fg"]}" stroke-opacity=".7" stroke-dasharray="4 4"/>')
     v.append(f'<g class="fade" style="{d(1.3)}">{text(ox, thr - 4, "p=.05", 8.5, "fg", T=T)}</g>')
     v.append(f'<path d="M{ox},{base}.5 H376" stroke="{T["line"]}"/>')
-    legend = (f'<text x="{ox}" y="134" font-size="9" font-weight="400" fill="{T["muted"]}">'
-              f'<tspan fill="{T["accent"]}">■</tspan> +UIRP/CIRP  <tspan fill="{T["subtle"]}">■</tspan> without</text>')
+    legend = (f'<text{tc_attr()} x="{ox}" y="134" font-size="9" font-weight="400" fill="{T["muted"]}">'
+              f'<tspan fill="{T["accent"]}">■</tspan> +UIRP/CIRP  <tspan fill="{T["subtle"]}">■</tspan>{esc(tr(" without"))}</text>')
     v.append(f'<g class="fade" style="{d(1)}">{legend}</g>')
 
     return frame(
@@ -290,9 +291,9 @@ def mvdis(T):
     css.append(".seat{animation:seat 6s linear infinite both}"
                "@keyframes seat{0%{opacity:1}35%{opacity:1}50%,100%{opacity:0}}")
 
-    legend = (f'<text x="0" y="134" font-size="9" font-weight="400" fill="{T["muted"]}">'
-              f'<tspan fill="{T["ok"]}">■</tspan> seat released   '
-              f'<tspan fill="{T["muted"]}">□</tspan> no sessions (153), checked daily</text>')
+    legend = (f'<text{tc_attr()} x="0" y="134" font-size="9" font-weight="400" fill="{T["muted"]}">'
+              f'<tspan fill="{T["ok"]}">■</tspan>{esc(tr(" seat released   "))}'
+              f'<tspan fill="{T["muted"]}">□</tspan>{esc(tr(" no sessions (153), checked daily"))}</text>')
     v.append(f'<g class="fade" style="{d(.6)}">{legend}</g>')
 
     return frame(
@@ -433,10 +434,69 @@ def hoyabit(T):
 CARDS = {"zk": zk, "fx": fx, "lending": lending, "mvdis": mvdis, "statsbot": statsbot, "hoyabit": hoyabit}
 
 
+ZH.update({
+    # row labels
+    "measured": "實測", "finding": "發現", "used by": "使用者", "decision": "決策", "my part": "我負責",
+    "cadence": "頻率", "budget": "用量", "scope": "範圍", "keeps": "保存", "caveat": "限制",
+    # chips
+    "capstone · NSTC grant": "專題 · 國科會大專生計畫", "re-test · fork": "重新檢驗 · fork",
+    "solo · live": "個人 · 運行中", "team of 2": "2 人團隊", "team of 4 · finalist": "4 人團隊 · 決賽",
+    # zk
+    "clients": "客戶端", "verify π": "驗證 π", "aggregate": "聚合",
+    " honest update   ": " 正常更新   ", " in-bound attack": " 範圍內攻擊", " — both verify": " — 都通過驗證",
+    "150/150 per-update Halo2 proofs verify": "150/150 份逐更新 Halo2 證明全數通過",
+    "synthetic data, 4-param model, 10 rounds": "合成資料、四參數模型、10 輪",
+    "300/300 in-bound attacks verify too": "範圍內攻擊也 300/300 通過驗證",
+    # fx
+    "level error ÷ random walk": "點位誤差 ÷ 隨機漫步", "best p = 0.21 → not significant": "最佳 p = 0.21 → 不顯著",
+    "direction: −log10 p (h=5)": "方向：−log10 p（h=5）", " without": " 無特徵",
+    "best level model 0.993× RW, p = 0.21": "點位最佳模型 0.993× RW，p = 0.21",
+    "UIRP/CIRP features carry direction info": "UIRP/CIRP 特徵對方向有預測力",
+    "2 test years × 52 origins × 11 series": "2 個測試年度 × 52 起點 × 11 條序列",
+    # lending
+    "expected realized APR by offer rate · backtest": "各掛單利率的預期實現年化 · 回測",
+    "5.83% · ladder floor": "5.83% · 階梯下限", "rate": "利率", "fill": "成交",
+    "fills ≥ FRR in 0 of 250 hours": "250 小時內成交價達到 FRR：0 次",
+    "floor 0.018%/day, the backtest optimum": "下限 0.018%/日，回測最佳點",
+    "5.83% APR is a backtest, not a promise": "5.83% 年化是回測值，不是保證",
+    # mvdis
+    "36 stations × 10 license classes = 360 combos": "36 站 × 10 種照類 = 360 組",
+    "hot": "熱門", "cold": "冷門", " seat released   ": " 釋出名額   ",
+    " no sessions (153), checked daily": " 無場次（153 組），每日檢查",
+    "hot ~10 min, cold ~2 h · sweeps to scale": "熱門約 10 分、冷門約 2 小時，速度按比例",
+    "14 of 50 subrequests per run, free tier": "每次執行 14／50 個子請求，免費方案",
+    "not real-time: the source has no push": "不是即時：官網沒有推播",
+    # statsbot
+    "student": "學生", "grader": "批改", "feedback → report": "回饋 → 報告", "attempt 2 → report": "第 2 次 → 報告",
+    "parse .html": "解析 .html", "grade · English": "評分 · 英文表達", "grade · statistics": "評分 · 統計內容",
+    "~150 students in statistics courses": "統計學課程約 150 位學生",
+    "bot core: login, parsing, LLM calls, Drive": "Bot 核心：登入、解析、LLM 呼叫、Drive",
+    "every attempt, plus an HTML report": "每次提交與 HTML 評分報告",
+    # hoyabit
+    "A · 8 fetches in parallel": "A · 8 個來源並行抓取", "B · agent fills gaps": "B · Agent 補足缺口",
+    "× timeout": "× 逾時", "+ on-chain": "+ 鏈上", "+ derivatives": "+ 衍生品", "+ news": "+ 新聞",
+    "time budget": "時間預算", "20% left → converge": "剩 20% → 收斂",
+    "→ report, every claim sourced": "→ 報告，每條判斷附來源",
+    "agent loop, 15 data tools, report schema": "Agent 迴圈、15 個資料工具、報告 schema",
+    "19/19 test phrasings routed by rules": "19/19 種問法由規則判別題型",
+    "information tool, not investment advice": "資訊提煉工具，不提供投資建議",
+    # titles
+    "zk-verifiable-dp-fl: verifiable differential privacy for federated learning": "zk-verifiable-dp-fl：可驗證差分隱私聯邦學習",
+    "forcasting-fx-transformer: a re-test of an existing FX forecasting study": "forcasting-fx-transformer：重新檢驗既有的匯率預測研究",
+    "bitfinex-lending-bot: funding offers laddered on real fills, not FRR": "bitfinex-lending-bot：依實際成交價（而非 FRR）分層掛單的放貸機器人",
+    "mvdis-watch: driving-test seat monitor for 36 stations x 10 license classes": "mvdis-watch：36 個監理站 × 10 種照類的考照名額監測",
+    "StatsDiscordBot: Discord bot that gives feedback on statistics free-response homework": "StatsDiscordBot：統計學 FRQ 作業回饋 Discord Bot",
+    "aws-hoyabit: crypto market analysis agent (hackathon finalist)": "aws-hoyabit：加密市場分析 AI Agent（黑客松決賽）",
+})
+
+
 def main():
-    for slug, fn in CARDS.items():
-        for th, T in THEMES.items():
-            write(f"card-{slug}", th, fn(T))
+    for lang in ("en", "zh"):
+        set_lang(lang)
+        for slug, fn in CARDS.items():
+            for th, T in THEMES.items():
+                write(f"card-{slug}", th, fn(T))
+    set_lang("en")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ import os
 import subprocess
 import urllib.request
 
-from svgkit import EASE, THEMES, document, text, write
+from svgkit import EASE, THEMES, ZH, document, esc, set_lang, tc_attr, text, tr, write
+import svgkit
 
 USER = "ChiJiun"
 W, H = 840, 224
@@ -21,6 +22,12 @@ X0, X1, BASE, TOP = 44, 800, 160, 62
 QUERY = """query($login:String!){user(login:$login){contributionsCollection{
   totalCommitContributions totalPullRequestContributions
   contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}}}}"""
+
+
+ZH.update({
+    "contributions per week · last 12 months": "每週貢獻 · 近 12 個月",
+    "refreshed daily by GitHub Actions": "每日由 GitHub Actions 更新",
+})
 
 
 def token() -> str:
@@ -55,10 +62,14 @@ def build(theme: str, data: dict, today: dt.date) -> str:
     b, css = [], []
     b.append(f'<rect x=".5" y=".5" width="{W-1}" height="{H-1}" rx="14" fill="{T["panel"]}" stroke="{T["line"]}"/>')
     b.append(f'<g class="fade">{text(X0, 36, "contributions per week · last 12 months", 12, "muted", T=T)}</g>')
-    head = (f'<text x="{X1}" y="36" font-size="12" font-weight="400" text-anchor="end" fill="{T["muted"]}">'
-            f'<tspan fill="{T["fg"]}" font-weight="500">{total}</tspan> total · '
-            f'<tspan fill="{T["fg"]}" font-weight="500">{data["totalCommitContributions"]}</tspan> commits · '
-            f'<tspan fill="{T["fg"]}" font-weight="500">{data["totalPullRequestContributions"]}</tspan> PRs</text>')
+    num = lambda v: f'<tspan fill="{T["fg"]}" font-weight="500">{v}</tspan>'
+    c, p = data["totalCommitContributions"], data["totalPullRequestContributions"]
+    if svgkit.LANG == "zh":
+        inner = f"總計 {num(total)} · commit {num(c)} · PR {num(p)}"
+    else:
+        inner = f"{num(total)} total · {num(c)} commits · {num(p)} PRs"
+    head = (f'<text{tc_attr()} x="{X1}" y="36" font-size="12" font-weight="400" text-anchor="end" fill="{T["muted"]}">'
+            f"{inner}</text>")
     b.append(f'<g class="fade">{head}</g>')
     b.append(f'<path d="M{X0},{BASE + .5} H{X1}" stroke="{T["line"]}"/>')
 
@@ -77,12 +88,16 @@ def build(theme: str, data: dict, today: dt.date) -> str:
         mid = start + dt.timedelta(days=3)
         if mid.month != last_month:
             if last_month is not None or mid.day <= 7:
-                b.append(f'<g class="fade" style="animation-delay:.4s">{text(x + bw/2, BASE + 21, mid.strftime("%b"), 10, "subtle", anchor="middle", T=T)}</g>')
+                b.append(f'<g class="fade" style="animation-delay:.4s">{text(x + bw/2, BASE + 21, (f"{mid.month}月" if svgkit.LANG == "zh" else mid.strftime("%b")), 10, "subtle", anchor="middle", T=T)}</g>')
             last_month = mid.month
 
     px = X0 + peak_i * pitch + pitch / 2
     ph = weeks[peak_i][1] / vmax * (BASE - TOP)
-    label = f"peak {weeks[peak_i][1]} · week of {weeks[peak_i][0].strftime('%b %-d') if os.name != 'nt' else weeks[peak_i][0].strftime('%b %#d')}"
+    pk = weeks[peak_i][0]
+    if svgkit.LANG == "zh":
+        label = f"高峰 {weeks[peak_i][1]} · {pk.month}/{pk.day} 那週"
+    else:
+        label = f"peak {weeks[peak_i][1]} · week of {pk.strftime('%b')} {pk.day}"
     anchor = "end" if peak_i > n * 0.7 else "start"
     lx = px + (6 if anchor == "start" else -6)
     b.append(f'<g class="fade" style="animation-delay:1.3s"><path d="M{px:.1f},{BASE - ph - 4:.1f} V{TOP - 8}" stroke="{T["subtle"]}" stroke-dasharray="2 2"/>'
@@ -93,7 +108,8 @@ def build(theme: str, data: dict, today: dt.date) -> str:
              f'<circle cx="{lx_last:.1f}" cy="{BASE + 6}" r="2.5" fill="{T["accent"]}"/>')
     b.append(f'<rect class="sweep" x="{X0 - 2}" y="{TOP - 14}" width="2" height="{BASE - TOP + 14}" fill="{T["fg"]}"/>')
 
-    note = f"Sprints, not streaks: {zeros} of {n} weeks had none."
+    note = (f"集中衝刺，不追連續紀錄：{n} 週中有 {zeros} 週沒有貢獻。" if svgkit.LANG == "zh"
+            else f"Sprints, not streaks: {zeros} of {n} weeks had none.")
     b.append(f'<g class="fade" style="animation-delay:1.6s">{text(X0, 206, note, 11, "muted", T=T)}'
              f'{text(X1, 206, "refreshed daily by GitHub Actions", 10, "subtle", anchor="end", T=T)}</g>')
 
@@ -117,8 +133,11 @@ def build(theme: str, data: dict, today: dt.date) -> str:
 def main():
     data = fetch()
     today = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date()
-    for th in THEMES:
-        write("activity", th, build(th, data, today))
+    for lang in ("en", "zh"):
+        set_lang(lang)
+        for th in THEMES:
+            write("activity", th, build(th, data, today))
+    set_lang("en")
 
 
 if __name__ == "__main__":
