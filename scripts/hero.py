@@ -233,7 +233,7 @@ ZH.update({
     "I build verifiable-ML prototypes, and small": "做可驗證機器學習的原型，",
     "bots that run on free tiers.": "也做幾個跑在免費額度上的小工具。",
     "The world is one giant makeshift troupe,": "這個世界就是一個巨大的草台班子，",
-    "so fake it till you make it.": "所以先假裝做得到，直到真的做到。",
+    "so fake it till you make it.": "所以弄假直到成真。",
     "π · verified": "π · 驗證通過", "+ noise": "+ 噪聲", "verified": "驗證通過",
     "— noise   ": "— 雜訊   ", "— smoothed signal   ": "— 平滑訊號   ", "— what actually happened": "— 實際走勢",
     "now": "現在", "now ": "現在 ", "95% band": "95% 區間",

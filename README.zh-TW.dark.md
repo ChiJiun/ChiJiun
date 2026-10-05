@@ -2,7 +2,7 @@
 
 <p align="right"><sub><a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.dark.md">English</a> · <b>繁體中文</b> &nbsp;│&nbsp; <a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.zh-TW.md">自動</a> · <b>深色</b> · <a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.zh-TW.light.md">淺色</a></sub></p>
 
-<img alt="這個世界就是一個巨大的草台班子，所以先假裝做得到，直到真的做到。翁祺鈞 Chi-Jiun Wong。中央大學資工系，輔系財金。做可驗證機器學習的原型，也做幾個跑在免費額度上的小工具。" src="./assets/hero-zh-dark.svg" width="100%">
+<img alt="這個世界就是一個巨大的草台班子，所以弄假直到成真。翁祺鈞 Chi-Jiun Wong。中央大學資工系，輔系財金。做可驗證機器學習的原型，也做幾個跑在免費額度上的小工具。" src="./assets/hero-zh-dark.svg" width="100%">
 
 目前在做國科會大專生計畫「可驗證差分隱私聯邦學習」；其餘時間做幾個跑在免費額度上的小工具。
 
