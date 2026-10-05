@@ -2,13 +2,11 @@
 
 <p align="right"><sub><a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.light.md">English</a> · <b>繁體中文</b> &nbsp;│&nbsp; <a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.zh-TW.md">自動</a> · <a href="https://github.com/ChiJiun/ChiJiun/blob/main/README.zh-TW.dark.md">深色</a> · <b>淺色</b></sub></p>
 
-<img alt="這個世界就是一個巨大的草台班子，所以 fake it till you make it。翁祺鈞 Chi-Jiun Wong。中央大學資工系，輔系財金。做可驗證機器學習的原型，也做幾個跑在免費額度上的小工具。" src="./assets/hero-zh-light.svg" width="100%">
+<img alt="這個世界就是一個巨大的草台班子，所以先假裝做得到，直到真的做到。翁祺鈞 Chi-Jiun Wong。中央大學資工系，輔系財金。做可驗證機器學習的原型，也做幾個跑在免費額度上的小工具。" src="./assets/hero-zh-light.svg" width="100%">
 
 目前在做國科會大專生計畫「可驗證差分隱私聯邦學習」；其餘時間做幾個跑在免費額度上的小工具。
 
 這頁上的數字都直接取自各 repo 的 README 或實驗結果，每個數字旁邊都寫出它的限制。團隊專案只寫我負責的部分。
-
-**聯絡** · [0311gino@gmail.com](mailto:0311gino@gmail.com) · [linktr.ee/0311gino](https://linktr.ee/0311gino)
 
 ### 精選作品
 
