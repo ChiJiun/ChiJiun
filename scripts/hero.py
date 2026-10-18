@@ -2,13 +2,18 @@
 
 Right side loops one client update through the pipeline the research project proves:
 raw Δw -> clipped to ±C (the cut-off part shows as a dashed ghost) -> DP noise added
--> wrapped in a proof -> verified. Background traces are noise, drifting.
+(noise particles swarm the bars) -> wrapped in a proof -> verified (ring pulse).
+Background: two phosphor traces with afterglow, drifting.
+
+v2 motion: panel chrome (grid, glow, drawn border, corner ticks, sheen pass), motto
+highlight sweep, name glow + underline, live dot, clip flash, noise swarm, proof glow,
+verify pulse, cycle progress bar.
 """
 from __future__ import annotations
 
 import random
 
-from svgkit import (EASE, EASE_IO, THEMES, ZH, document, esc, mono_w, poly, set_lang, smooth_path, tc_attr, text,
+from svgkit import (EASE, EASE_IO, THEMES, ZH, chrome, document, esc, mono_w, poly, set_lang, tc_attr, text,
                     text_w, tr, write)
 
 W, H = 840, 300
@@ -31,14 +36,6 @@ def bridge(n: int, rng: random.Random, sigma: float) -> list[float]:
     return [w[i] - w[-1] * i / n for i in range(n + 1)]
 
 
-def walk(n: int, rng: random.Random, sigma: float) -> list[float]:
-    w, s = [0.0], 0.0
-    for _ in range(n):
-        s += rng.gauss(0, sigma)
-        w.append(s)
-    return w
-
-
 def clamp_h(v: float, B: float) -> float:
     return max(3.0, min(v, B + 10))
 
@@ -46,50 +43,58 @@ def clamp_h(v: float, B: float) -> float:
 def build(theme: str) -> str:
     T = THEMES[theme]
     css, body = [], []
+    S, A, OK = T["subtle"], T["accent"], T["ok"]
 
-    # ---- background: dot grid + scrolling noise traces (parallax) ----------------
+    defs, bg, kcss = chrome(T, W, H, 14, glow_at=(0.8, 0.5))
+    css.append(kcss)
+    body.append(defs)
     body.append(
-        f'<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">'
-        f'<circle cx="1.5" cy="1.5" r="1" fill="{T["grid"]}"/></pattern>'
-        f'<linearGradient id="scrim" gradientUnits="userSpaceOnUse" x1="0" x2="{W}" y1="0" y2="0">'
-        f'<stop offset="0" stop-color="{T["panel"]}"/><stop offset=".58" stop-color="{T["panel"]}" stop-opacity=".95"/>'
-        f'<stop offset=".71" stop-color="{T["panel"]}" stop-opacity="0"/></linearGradient>'
-        f'<clipPath id="frame"><rect x="1" y="1" width="{W-2}" height="{H-2}" rx="14"/></clipPath>'
+        f'<defs><linearGradient id="scrim" gradientUnits="userSpaceOnUse" x1="0" x2="{W}" y1="0" y2="0">'
+        f'<stop offset="0" stop-color="{T["panel"]}"/><stop offset=".56" stop-color="{T["panel"]}" stop-opacity=".96"/>'
+        f'<stop offset=".7" stop-color="{T["panel"]}" stop-opacity="0"/></linearGradient>'
+        f'<linearGradient id="uline" x1="0" x2="1"><stop offset="0" stop-color="{A}"/><stop offset="1" stop-color="{A}" stop-opacity="0"/></linearGradient>'
+        f'<linearGradient id="hl" x1="0" x2="1"><stop offset="0" stop-color="{A}" stop-opacity="0"/>'
+        f'<stop offset=".5" stop-color="{A}" stop-opacity=".16"/><stop offset="1" stop-color="{A}" stop-opacity="0"/></linearGradient>'
         f'<clipPath id="flap"><rect x="{NAME_X-4}" y="{NAME_Y-40}" width="{mono_w(NAME, NAME_SIZE)+8}" height="54"/></clipPath>'
+        f'<clipPath id="motto"><rect x="{NAME_X}" y="28" width="360" height="44"/></clipPath>'
         f"</defs>"
     )
-    body.append(f'<rect x=".5" y=".5" width="{W-1}" height="{H-1}" rx="14" fill="{T["panel"]}" stroke="{T["line"]}"/>')
-    body.append('<g clip-path="url(#frame)">')
-    body.append(f'<rect class="fade" style="animation-delay:0s" width="{W}" height="{H}" fill="url(#dots)"/>')
+    body.append(bg)
+    body.append('<g clip-path="url(#k-frame)">')
 
+    # ---- phosphor traces with afterglow (drift) ----------------------------------------
     rng = random.Random(7)
     step, n = 6, W // 6
-    for i, (base, amp, dur, op) in enumerate([(160, 3.4, 70, 0.4), (196, 2.6, 95, 0.3), (128, 2.2, 130, 0.22)]):
+    for i, (base, amp, dur, op, col) in enumerate([(170, 3.6, 70, 0.55, OK), (204, 2.8, 95, 0.35, A), (132, 2.2, 130, 0.25, S)]):
         b = bridge(n, rng, amp)
         pts = [(k * step, base + b[k % n]) for k in range(2 * n + 1)]
+        d = poly(pts)
+        glow = (f'<path class="drift" style="animation-duration:{dur}s" d="{d}" stroke="{col}" stroke-opacity="{op * .7:.2f}" '
+                f'stroke-width="3" filter="url(#k-blur)"/>') if i < 2 else ""
         body.append(
-            f'<g class="fade" style="animation-delay:{0.2 + i * 0.15:.2f}s">'
-            f'<path class="drift" style="animation-duration:{dur}s" d="{poly(pts)}" '
-            f'stroke="{T["subtle"]}" stroke-opacity="{op}" stroke-width="1"/></g>'
+            f'<g class="k-fade" style="animation-delay:{0.3 + i * 0.15:.2f}s">{glow}'
+            f'<path class="drift" style="animation-duration:{dur}s" d="{d}" stroke="{col}" stroke-opacity="{op}" stroke-width="1"/></g>'
         )
     body.append(f'<rect width="{W}" height="{H}" fill="url(#scrim)"/>')
 
     # ---- mechanism: one client update, clipped, noised, proven ---------------------
-    # Same story as zk-verifiable-dp-fl: Δw -> clip to ±C -> + DP noise -> π -> verified.
     P = 8.0
     bx0, pitch, bw, base, B = 546, 18, 10, 166, 40
     vrng = random.Random(21)
     raw = [vrng.choice([-1, 1]) * vrng.uniform(14, 74) for _ in range(14)]
-    S, A = T["subtle"], T["accent"]
 
     def scale(h: float, r: float) -> float:
         return max(0.08, h / abs(r))
 
-    body.append(f'<g class="fade" style="animation-delay:.6s">'
-                f'<path d="M538,{base - B} H812 M538,{base + B} H812" stroke="{A}" stroke-opacity=".55" stroke-dasharray="3 3"/>'
+    # ±C bounds flash while clipping happens
+    body.append(f'<g class="k-fade" style="animation-delay:.6s">'
+                f'<path class="bound" d="M538,{base - B} H812 M538,{base + B} H812" stroke="{A}" stroke-opacity=".5" stroke-dasharray="3 3"/>'
                 f'<path d="M538,{base}.5 H812" stroke="{T["line"]}"/>'
                 + text(812, base - B - 5, "+C", 9.5, "accent", anchor="end", T=T)
                 + text(812, base + B + 13, "−C", 9.5, "accent", anchor="end", T=T) + "</g>")
+    css.append(f".bound{{animation:bound {P}s linear .8s infinite both}}"
+               "@keyframes bound{0%,20%{stroke-opacity:.5}24%,34%{stroke-opacity:1;stroke-width:1.6}40%,100%{stroke-opacity:.5}}")
+
     for i, r in enumerate(raw):
         x = bx0 + i * pitch
         h = abs(r)
@@ -109,16 +114,30 @@ def build(theme: str) -> str:
             body.append(f'<rect class="ghost" x="{x - .5}" y="{y - .5:.1f}" width="{bw + 1}" height="{h + 1:.1f}" rx="2" '
                         f'stroke="{T["muted"]}" stroke-dasharray="2 2"/>')
 
+    # DP noise swarm: particles that appear only during the "+ noise" phase
+    nrng = random.Random(5)
+    for k in range(26):
+        px = nrng.uniform(540, 812)
+        py = nrng.uniform(base - B - 16, base + B + 16)
+        dx, dy = nrng.uniform(-9, 9), nrng.uniform(-9, 9)
+        r = nrng.uniform(.9, 2.0)
+        css.append(f"@keyframes nz{k}{{0%,36%{{opacity:0;transform:none}}42%{{opacity:.95}}"
+                   f"50%{{transform:translate({dx:.1f}px,{dy:.1f}px)}}56%{{opacity:.5}}62%,100%{{opacity:0;transform:translate({dx * 1.6:.1f}px,{dy * 1.6:.1f}px)}}}}")
+        body.append(f'<circle class="nz" style="animation-name:nz{k}" cx="{px:.1f}" cy="{py:.1f}" r="{r:.1f}" fill="{A}"/>')
+    css.append(f".nz{{opacity:0;animation:{P}s {EASE} .8s infinite both}}")
+
     box_y, box_h = base - B - 22, 2 * B + 44
-    body.append(f'<rect class="proof" pathLength="1" stroke-dasharray="1" x="538" y="{box_y}" width="{14 * pitch + 2}" '
-                f'height="{box_h}" rx="8" stroke="{T["ok"]}" stroke-width="1.4"/>')
+    box = f'x="538" y="{box_y}" width="{14 * pitch + 2}" height="{box_h}" rx="8"'
+    body.append(f'<rect class="pglow" {box} stroke="{OK}" stroke-width="5" filter="url(#k-blur2)"/>')
+    body.append(f'<rect class="proof" pathLength="1" stroke-dasharray="1" {box} stroke="{OK}" stroke-width="1.4"/>')
+    body.append(f'<rect class="vring" {box} stroke="{OK}" stroke-width="1.2"/>')
     badge = tr("π · verified")
     bwid = text_w(badge, 10.5) + 18
     body.append(f'<g class="badge fb"><rect x="{812 - bwid:.1f}" y="{box_y + box_h - 11}" width="{bwid:.1f}" height="22" rx="11" '
-                f'fill="{T["panel"]}" stroke="{T["ok"]}"/>'
+                f'fill="{T["panel"]}" stroke="{OK}"/>'
                 + text(812 - bwid / 2, box_y + box_h + 4, badge, 10.5, "ok", 500, anchor="middle", T=T) + "</g>")
 
-    # pipeline header: each step lights while it happens
+    # pipeline header: each step lights while it happens, progress bar tracks the cycle
     steps = [("Δw", 2, 24), ("clip", 22, 40), ("+ noise", 38, 58), ("π", 58, 92), ("verified", 64, 92)]
     x = 544
     for k, (label, on, off) in enumerate(steps):
@@ -131,23 +150,42 @@ def build(theme: str) -> str:
         if k < len(steps) - 1:
             body.append(text(x + 5, 62, "→", 11, "subtle", T=T))
             x += 26
+    body.append(f'<rect x="544" y="70" width="268" height="2" rx="1" fill="{T["grid"]}"/>'
+                f'<rect class="prog" x="544" y="70" width="268" height="2" rx="1" fill="{A}" fill-opacity=".8"/>')
     css.append(
         f".bar{{transform-box:fill-box;animation:{P}s {EASE} .8s infinite both}}"
         f".ghost{{opacity:0;animation:ghost {P}s linear .8s infinite both}}"
         "@keyframes ghost{0%,10%{opacity:0}14%,32%{opacity:.9}40%,100%{opacity:0}}"
         f".proof{{animation:proof {P}s {EASE_IO} .8s infinite both}}"
         "@keyframes proof{0%,58%{stroke-dashoffset:1;opacity:1}68%,92%{stroke-dashoffset:0;opacity:1}98%,100%{stroke-dashoffset:0;opacity:0}}"
+        f".pglow{{opacity:0;animation:pglow {P}s {EASE} .8s infinite both}}"
+        "@keyframes pglow{0%,64%{opacity:0}70%{opacity:.7}92%{opacity:.25}98%,100%{opacity:0}}"
+        f".vring{{transform-box:fill-box;transform-origin:center;opacity:0;animation:vring {P}s {EASE} .8s infinite both}}"
+        "@keyframes vring{0%,66%{opacity:0;transform:scale(.9)}69%{opacity:.9}88%,100%{opacity:0;transform:scale(1.22)}}"
         f".badge{{transform-origin:center;animation:badge {P}s {EASE} .8s infinite both}}"
         "@keyframes badge{0%,64%{transform:scale(0);opacity:0}69%,92%{transform:none;opacity:1}98%,100%{opacity:0}}"
         f".step{{opacity:0;animation:{P}s linear .8s infinite both}}"
+        f".prog{{transform-box:fill-box;transform-origin:left;animation:prog {P}s linear .8s infinite both}}"
+        "@keyframes prog{0%{transform:scaleX(0);opacity:1}92%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}"
     )
     body.append("</g>")
 
-    # ---- motto ---------------------------------------------------------------------------
-    adv = NAME_SIZE * 0.6
-    body.append(f'<g class="fade" style="animation-delay:.1s"><rect x="{NAME_X}" y="30" width="3" height="38" rx="1.5" fill="{T["accent"]}"/>'
+    # ---- motto with a highlight sweep ------------------------------------------------------
+    body.append(f'<rect class="bar0" x="{NAME_X}" y="30" width="3" height="38" rx="1.5" fill="{A}"/>')
+    body.append(f'<g class="k-fade" style="animation-delay:.25s">'
                 + text(NAME_X + 14, 45, "The world is one giant makeshift troupe,", 13, "muted", T=T)
                 + text(NAME_X + 14, 64, "so fake it till you make it.", 13, "accent", 500, T=T) + "</g>")
+    body.append(f'<g clip-path="url(#motto)"><rect class="hl" x="{NAME_X - 120}" y="28" width="120" height="44" fill="url(#hl)"/></g>')
+    css.append(
+        f".bar0{{transform-box:fill-box;transform-origin:top;animation:grow0 .7s {EASE} .15s both}}@keyframes grow0{{from{{transform:scaleY(0)}}}}"
+        f".hl{{animation:hl 1.3s {EASE_IO} .45s both}}@keyframes hl{{to{{transform:translateX(480px)}}}}"
+    )
+
+    # ---- split-flap name, then glow + underline ---------------------------------------------
+    adv = NAME_SIZE * 0.6
+    name_w = mono_w(NAME, NAME_SIZE)
+    body.append(f'<text class="nglow" x="{NAME_X}" y="{NAME_Y}" font-size="{NAME_SIZE}" font-weight="700" fill="{A}" '
+                f'filter="url(#k-blur2)">{esc(NAME)}</text>')
     body.append('<g clip-path="url(#flap)">')
     frng = random.Random(3)
     nflap = 7
@@ -160,10 +198,16 @@ def build(theme: str) -> str:
             col.append(text(x, NAME_Y - k * 54, frng.choice(FLAP_GLYPHS), NAME_SIZE, "subtle", 700, T=T))
         body.append(f'<g class="flap" style="animation-delay:{0.25 + i * 0.065:.3f}s">{"".join(col)}</g>')
     body.append("</g>")
+    body.append(f'<rect class="uline" x="{NAME_X}" y="{NAME_Y + 9}" width="{name_w:.0f}" height="2" rx="1" fill="url(#uline)"/>')
     cjk_x = NAME_X + len(NAME) * adv + 18
     body.append(
         f'<text class="tc rise" style="animation-delay:1.25s" x="{cjk_x:.1f}" y="{NAME_Y - 2}" '
         f'font-size="24" font-weight="500" fill="{T["muted"]}">翁祺鈞</text>'
+    )
+    css.append(
+        ".nglow{opacity:0;animation:nglow 2.4s ease-out 1.05s both}"
+        "@keyframes nglow{0%{opacity:0}30%{opacity:.55}100%{opacity:.16}}"
+        f".uline{{transform-box:fill-box;transform-origin:left;animation:growx0 .9s {EASE} 1.15s both}}@keyframes growx0{{from{{transform:scaleX(0)}}}}"
     )
 
     # ---- typed intro -------------------------------------------------------------------
@@ -184,32 +228,21 @@ def build(theme: str) -> str:
     last_w = text_w(tr(LINES[-1][0]), size)
     body.append(
         f'<rect class="caret" style="animation-delay:{t:.2f}s" x="{NAME_X + last_w + 4:.1f}" '
-        f'y="{y - 24 - 13}" width="8" height="16" fill="{T["accent"]}"/>'
+        f'y="{y - 24 - 13}" width="8" height="16" fill="{A}"/>'
     )
 
     now = (
-        f'<text{tc_attr()} x="{NAME_X}" y="266" font-size="12" font-weight="400" fill="{T["muted"]}">'
-        f'<tspan fill="{T["accent"]}">{esc(tr("now "))}</tspan>'
+        f'<text{tc_attr()} x="{NAME_X + 14}" y="266" font-size="12" font-weight="400" fill="{T["muted"]}">'
+        f'<tspan fill="{A}">{esc(tr("now "))}</tspan>'
         f"{esc(tr('verifiable DP for federated learning · NSTC undergrad research'))}</text>"
     )
-    body.append(f'<g class="fade" style="animation-delay:{t + 0.2:.2f}s">{now}</g>')
+    body.append(f'<g class="k-fade" style="animation-delay:{t + 0.2:.2f}s">'
+                f'<circle class="live" cx="{NAME_X + 4}" cy="262" r="3" fill="{OK}"/>'
+                f'<circle class="livering" cx="{NAME_X + 4}" cy="262" r="3" stroke="{OK}"/>{now}</g>')
 
     css.append(
-        f".fade{{animation:fade .9s {EASE} both}}"
-        "@keyframes fade{from{opacity:0}}"
         ".drift{animation:drift linear infinite}"
         f"@keyframes drift{{to{{transform:translateX(-{W}px)}}}}"
-        f".draw{{animation:draw 1.6s {EASE_IO} both}}"
-        "@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}"
-        f".cone{{transform-origin:left center;animation:cone .9s {EASE} both}}"
-        "@keyframes cone{from{transform:scale(0,.2);opacity:0}}"
-        f".pop{{transform-origin:center;animation:pop .5s {EASE} both}}"
-        "@keyframes pop{from{transform:scale(0)}}"
-        ".ring{transform-origin:center;animation:ring 2.4s ease-out 3s infinite both}"
-        "@keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(4.5);opacity:0}}"
-        ".real{animation:real 9s linear infinite both}"
-        "@keyframes real{0%{stroke-dashoffset:1;opacity:1}22%{stroke-dashoffset:0}30%{opacity:1}"
-        "33.3%,100%{stroke-dashoffset:0;opacity:0}}"
         f".flap{{animation:flap .42s steps({nflap},end) both}}"
         f"@keyframes flap{{from{{transform:translateY({nflap * 54}px)}}to{{transform:none}}}}"
         f".rise{{animation:rise .8s {EASE} both}}"
@@ -218,6 +251,9 @@ def build(theme: str) -> str:
         "@keyframes type{from{transform:scaleX(1)}to{transform:scaleX(0)}}"
         ".caret{animation:blink 1.1s steps(1,end) infinite both}"
         "@keyframes blink{0%{opacity:0}50%{opacity:1}}"
+        ".live{animation:live 2s ease-in-out infinite both}@keyframes live{50%{opacity:.45}}"
+        ".livering{transform-box:fill-box;transform-origin:center;animation:livering 2s ease-out infinite both}"
+        "@keyframes livering{from{transform:scale(1);opacity:.8}to{transform:scale(3.4);opacity:0}}"
     )
     return document(
         W, H, "".join(body), "".join(css),
@@ -235,8 +271,7 @@ ZH.update({
     "The world is one giant makeshift troupe,": "這個世界就是一個巨大的草台班子，",
     "so fake it till you make it.": "所以弄假直到成真。",
     "π · verified": "π · 驗證通過", "+ noise": "+ 噪聲", "verified": "驗證通過",
-    "— noise   ": "— 雜訊   ", "— smoothed signal   ": "— 平滑訊號   ", "— what actually happened": "— 實際走勢",
-    "now": "現在", "now ": "現在 ", "95% band": "95% 區間",
+    "now": "現在", "now ": "現在 ",
     "verifiable DP for federated learning · NSTC undergrad research": "可驗證差分隱私聯邦學習 · 國科會大專生計畫",
     "Chi-Jiun Wong (翁祺鈞)": "翁祺鈞 Chi-Jiun Wong",
 })

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import random
 
-from svgkit import (EASE, EASE_IO, THEMES, ZH, document, esc, mono_w, poly, set_lang, smooth_path, tc_attr, text,
+from svgkit import (EASE, EASE_IO, THEMES, ZH, chrome, document, esc, mono_w, poly, set_lang, smooth_path, tc_attr, text,
                     text_w, tr, write)
 
 W, H = 420, 290
@@ -41,6 +41,11 @@ COMMON_CSS = (
     ".big{animation-name:ringbig}@keyframes ringbig{from{transform:scale(1);opacity:.8}to{transform:scale(1.7);opacity:0}}"
     ".march{animation:march 1.2s linear infinite}"
     "@keyframes march{to{stroke-dashoffset:-8}}"
+    # v2 frame motion: watermark settles, title underline and separator grow, row ticks drop in
+    f".wm{{animation:wm 1.6s {EASE} .1s both}}@keyframes wm{{from{{opacity:0;transform:translateX(14px)}}}}"
+    f".tline{{transform-box:fill-box;transform-origin:left;animation:growx .8s {EASE} .3s both}}"
+    f".sep{{transform-box:fill-box;transform-origin:left;animation:growx 1s {EASE} both}}"
+    f".rtick{{transform-box:fill-box;transform-origin:top;animation:grow .5s {EASE} both}}"
 )
 
 
@@ -54,8 +59,14 @@ def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc, blurb=None):
     W, H = (840, 226) if wide else (420, 290)
     vx, vy = (442, 70) if wide else (VX, VY)
     row_y = 160 if wide else 238
-    b = [f'<rect x=".5" y=".5" width="{W-1}" height="{H-1}" rx="12" fill="{T["panel"]}" stroke="{T["line"]}"/>']
+    defs, bg, kcss = chrome(T, W, H, 12, glow_at=((0.78, 0.5) if wide else (0.5, 0.42)), strength=0.8)
+    b = [defs, bg]
+    if wide:  # big faint index watermark in the free bottom-right corner (grid cards have no free corner)
+        b.append(f'<text class="wm" x="{W - 24}" y="{H - 18}" font-size="64" font-weight="700" '
+                 f'fill="{T["grid"]}" text-anchor="end">{esc(idx)}</text>')
     b.append(f'<g class="in">{text(22, 34, idx, 12, "accent", 500, T=T)}{text(50, 34, title, 15, "fg", 700, T=T)}</g>')
+    tw = text_w(tr(title), 15)
+    b.append(f'<rect class="tline" x="50" y="39" width="{tw:.0f}" height="1.5" fill="{T["accent"]}" fill-opacity=".7"/>')
     b.append(f'<g class="in" style="{d(.08)}">{text(22, 54, tags, 11, "muted", T=T)}</g>')
     cw = text_w(tr(chip), 10.5) + 16
     b.append(
@@ -66,19 +77,21 @@ def frame(T, idx, title, tags, chip, rows, viz, css, alt, desc, blurb=None):
     if wide:
         for i, line in enumerate(tr(blurb).split("\n")):
             b.append(f'<g class="in" style="{d(.2 + i*.05)}">{text(22, 84 + i * 18, line, 12, "muted", T=T)}</g>')
-        b.append(f'<line class="fade" style="{d(.3)}" x1="22" x2="400" y1="138.5" y2="138.5" stroke="{T["grid"]}"/>')
+        b.append(f'<rect class="sep" style="{d(.3)}" x="22" y="138" width="378" height="1" fill="{T["line"]}"/>')
     else:
-        b.append(f'<line class="fade" style="{d(.3)}" x1="22" x2="{W-22}" y1="216.5" y2="216.5" stroke="{T["grid"]}"/>')
+        b.append(f'<rect class="sep" style="{d(.3)}" x="22" y="216" width="{W-44}" height="1" fill="{T["line"]}"/>')
     for i, (label, value) in enumerate(rows):
         y = row_y + i * 20
+        col = T[ROW_COLORS[label]]
         b.append(
             f'<g class="in" style="{d(.35 + i * .08)}">'
+            f'<rect class="rtick" style="{d(.4 + i * .08)}" x="14" y="{y - 9}" width="2.5" height="11" rx="1" fill="{col}"/>'
             + text(22, y, label, 10.5, ROW_COLORS[label], 500, T=T)
             + text(100, y, value, 11, "fg", T=T)
             + "</g>"
         )
         assert text_w(tr(value), 11) <= (400 if wide else W - 22) - 100 + 4, f"row too long: {tr(value)}"
-    return document(W, H, "".join(b), COMMON_CSS + css, tr(alt), tr(desc))
+    return document(W, H, "".join(b), COMMON_CSS + kcss + css, tr(alt), tr(desc))
 
 
 # ------------------------------------------------------------------------------------------
@@ -98,8 +111,12 @@ def zk(T):
         v.append(f'<path class="fade" style="{d(.5)}" d="M206,{y} C260,{y} 270,{agg[1]} {agg[0]-26},{agg[1]}" stroke="{T["grid"]}"/>')
     v.append(f'<rect class="grow" style="{d(.3)}" x="190" y="18" width="14" height="108" rx="4" '
              f'fill="{T["accent"]}" fill-opacity=".08" stroke="{T["accent"]}"/>')
+    v.append(f'<rect class="gate" x="190" y="18" width="14" height="108" rx="4" stroke="{T["accent"]}" stroke-width="4" filter="url(#k-blur)"/>')
     v.append(f'<rect class="scan" x="191" y="18" width="12" height="14" rx="3" fill="{T["accent"]}" fill-opacity=".55"/>')
+    v.append(f'<rect class="scan" style="animation-delay:-.12s" x="191" y="18" width="12" height="14" rx="3" fill="{T["accent"]}" fill-opacity=".2" filter="url(#k-blur)"/>')
     v.append(f'<circle class="ring big" style="{d(1)}" cx="{agg[0]}" cy="{agg[1]}" r="24" stroke="{T["ok"]}" stroke-opacity=".6"/>')
+    v.append(f'<circle class="fade" style="{d(.6)}" cx="{agg[0]}" cy="{agg[1]}" r="24" stroke="{T["ok"]}" stroke-width="3" stroke-opacity=".5" filter="url(#k-blur)"/>')
+    css.append(".gate{animation:gate 2.1s ease-in-out infinite both;opacity:.35}@keyframes gate{50%{opacity:.75}}")
     v.append(f'<g class="pop" style="{d(.45)}"><circle cx="{agg[0]}" cy="{agg[1]}" r="24" fill="{T["panel"]}" stroke="{T["ok"]}"/>'
              + text(agg[0], agg[1] + 3.5, "FedAvg", 9.5, "ok", 500, anchor="middle", T=T) + "</g>")
 
@@ -230,6 +247,10 @@ def lending(T):
                  f'{text(x, 132, f"{fill:.0f}%", 9, "subtle", anchor="middle", T=T)}</g>')
     v.append(f'<g class="fade" style="{d(.3)}">{text(0, 118, "rate", 9, "subtle", T=T)}{text(0, 132, "fill", 9, "subtle", T=T)}</g>')
     curve = smooth_path([(X(r), Y(a)) for r, a, _ in pts])
+    v.append(f'<defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="{T["accent"]}" stop-opacity=".28"/>'
+             f'<stop offset="1" stop-color="{T["accent"]}" stop-opacity="0"/></linearGradient></defs>')
+    v.append(f'<path class="fade" style="{d(1.5)};animation-duration:1.4s" d="{curve} V104 H{X(pts[0][0]):.1f} Z" fill="url(#area)"/>')
+    v.append(f'<path class="draw" style="{d(.6)}" pathLength="1" stroke-dasharray="1" d="{curve}" stroke="{T["accent"]}" stroke-width="5" stroke-opacity=".35" filter="url(#k-blur)"/>')
     v.append(f'<path class="draw" style="{d(.6)}" pathLength="1" stroke-dasharray="1" d="{curve}" stroke="{T["accent"]}" stroke-width="2"/>')
     v.append(f'<path class="comet" pathLength="1" stroke-dasharray=".08 1" d="{curve}" stroke="{T["fg"]}" '
              f'stroke-width="2.6" stroke-linecap="round"/>')
@@ -268,15 +289,17 @@ def mvdis(T):
     v.append(f'<g class="fade">{text(0, 8, "36 stations × 10 license classes = 360 combos", 9.5, "muted", T=T)}</g>')
     v.append(f'<g class="fade" style="{d(.2)}">{text(0, rows_y[1] + 7, "hot", 9.5, "accent", T=T)}'
              f'{text(0, rows_y[6] + 7, "cold", 9.5, "blue", T=T)}</g>')
-    cells = []
-    for r in range(10):
-        for c in range(36):
+    # cells boot up column by column, left to right
+    for c in range(36):
+        cells = []
+        for r in range(10):
             x, y = gx + c * px, rows_y[r]
             if (r, c) in idle:
                 cells.append(f'<rect x="{x}" y="{y}" width="7.5" height="8" rx="1.5" stroke="{T["line"]}" stroke-width=".8"/>')
             else:
                 cells.append(f'<rect x="{x}" y="{y}" width="7.5" height="8" rx="1.5" fill="{T["line"]}"/>')
-    v.append(f'<g class="fade" style="{d(.15)};animation-duration:1.2s">{"".join(cells)}</g>')
+        v.append(f'<g class="boot" style="{d(.15 + c * .022)}">{"".join(cells)}</g>')
+    css.append(f".boot{{animation:boot .5s {EASE} both}}@keyframes boot{{from{{opacity:0;transform:translateY(-4px)}}}}")
 
     v.append('<defs>'
              f'<linearGradient id="sw" x1="0" x2="1"><stop offset="0" stop-color="{T["accent"]}" stop-opacity="0"/>'
@@ -287,6 +310,7 @@ def mvdis(T):
     hot_h = 3 * py
     cold_h = 7 * py
     v.append('<g clip-path="url(#grid)">'
+             f'<rect class="sweep" style="animation-duration:1.5s" x="{gx-28}" y="{gy-2}" width="28" height="{hot_h+1}" fill="url(#sw)" filter="url(#k-blur)" opacity=".45"/>'
              f'<rect class="sweep" style="animation-duration:1.5s" x="{gx-28}" y="{gy-2}" width="28" height="{hot_h+1}" fill="url(#sw)"/>'
              f'<rect class="sweep" style="animation-duration:18s" x="{gx-28}" y="{rows_y[3]-2}" width="28" height="{cold_h+1}" fill="url(#swc)"/>'
              '</g>')
@@ -358,6 +382,8 @@ def statsbot(T):
         v.append(f'<g class="in" style="{d(.2 + k*.07)}"><rect x="{nx}" y="{y}" width="{nw}" height="20" rx="5" stroke="{T["line"]}"/>'
                  + text(nx + 10, y + 13.5, label, 9.5, "muted", T=T) + "</g>")
         v.append(f'<rect class="lit" style="animation-delay:{1.6 + stage*.35:.2f}s" x="{nx}" y="{y}" width="{nw}" height="20" '
+                 f'rx="5" stroke="{T["accent"]}" stroke-width="3" stroke-opacity=".5" filter="url(#k-blur)"/>')
+        v.append(f'<rect class="lit" style="animation-delay:{1.6 + stage*.35:.2f}s" x="{nx}" y="{y}" width="{nw}" height="20" '
                  f'rx="5" stroke="{T["accent"]}" fill="{T["accent"]}" fill-opacity=".1"/>')
         if k < len(steps) - 1:
             v.append(f'<path class="fade" style="{d(.5)}" d="M{nx+nw/2},{y+21} v5" stroke="{T["line"]}"/>')
@@ -416,6 +442,15 @@ def hoyabit(T):
     v.append(f'<rect class="budget" x="{bx}" y="{by}" width="{bw}" height="6" rx="3" fill="{T["accent"]}"/>')
     v.append(f'<g class="conv">{text(bx + bw*.2 - 2, by + 22, "20% left → converge", 8.5, "bad", T=T)}</g>')
     v.append(f'<g class="conv">{text(bx, 134, "→ report, every claim sourced", 9, "ok", T=T)}</g>')
+    # the report itself: a small document that pops in when the agent converges
+    rx_, ry_ = bx + bw - 22, by + 14
+    v.append('<g class="rep fb">'
+             f'<path d="M{rx_},{ry_} h14 l8,8 v20 h-22 z" fill="{T["panel"]}" stroke="{T["ok"]}"/>'
+             f'<path d="M{rx_ + 14},{ry_} v8 h8" stroke="{T["ok"]}"/>'
+             + "".join(f'<path d="M{rx_ + 4},{ry_ + 13 + k * 5} h{w}" stroke="{T["ok"]}" stroke-opacity=".7"/>' for k, w in enumerate((10, 14, 8)))
+             + "</g>")
+    css.append(f".rep{{opacity:0;transform-origin:center;animation:rep {P}s {EASE} .6s infinite both}}"
+               "@keyframes rep{0%,74%{opacity:0;transform:scale(0)}80%,86%{opacity:1;transform:none}95%,100%{opacity:0;transform:none}}")
     css.append(
         f".phb{{animation:phb {P}s linear .6s infinite both}}"
         "@keyframes phb{0%,28%{opacity:0}33%,84%{opacity:1}92%,100%{opacity:0}}"

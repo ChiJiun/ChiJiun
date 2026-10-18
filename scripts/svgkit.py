@@ -23,19 +23,76 @@ FONT_DIR = ROOT / "scripts" / "fonts"
 ASSETS = ROOT / "assets"
 
 THEMES = {
+    # v2 "instrument" look: deeper ink panel, phosphor green for verified things, amber accent kept.
     "dark": dict(
-        panel="#0d1117", line="#30363d", grid="#21262d", fg="#e6edf3", muted="#9198a1",
-        subtle="#656c76", accent="#f2b33d", ok="#3fb950", bad="#f85149", blue="#58a6ff",
+        panel="#0b0f14", line="#263040", grid="#161c25", fg="#e8edf2", muted="#8b96a3",
+        subtle="#59636f", accent="#f2b33d", ok="#4ade80", bad="#ff6b6b", blue="#38bdf8",
+        glow=0.22, sheen=0.07,
     ),
     "light": dict(
-        panel="#ffffff", line="#d1d9e0", grid="#eef1f4", fg="#1f2328", muted="#59636e",
-        subtle="#8c959f", accent="#b35900", ok="#1a7f37", bad="#cf222e", blue="#0969da",
+        panel="#fbfaf7", line="#d6dbe2", grid="#eceff3", fg="#1b1f24", muted="#5a6472",
+        subtle="#8a94a0", accent="#b35900", ok="#1a7f37", bad="#cf222e", blue="#0969da",
+        glow=0.055, sheen=0.05,
     ),
 }
 
 # expo-out for entrances, linear only for things that represent clock time.
 EASE = "cubic-bezier(.16,1,.3,1)"
 EASE_IO = "cubic-bezier(.65,0,.35,1)"
+
+
+def chrome(T, W: int, H: int, rx: int = 14, glow_at=(0.82, 0.1), strength: float = 1.0) -> tuple[str, str, str]:
+    """Shared panel chrome: fine grid, accent glow, drawn border, corner ticks, one sheen pass.
+
+    Returns (defs, background_body, css). Put `defs` first, `background_body` right after,
+    and append `css`. Ids are prefixed `k-` so they never collide with per-image ids.
+    """
+    gx, gy = W * glow_at[0], H * glow_at[1]
+    defs = (
+        '<defs>'
+        f'<pattern id="k-grid" width="24" height="24" patternUnits="userSpaceOnUse">'
+        f'<path d="M24,0 H0 V24" stroke="{T["grid"]}" stroke-width="1"/></pattern>'
+        f'<radialGradient id="k-glow" gradientUnits="userSpaceOnUse" cx="{gx:.0f}" cy="{gy:.0f}" r="{W * 0.42:.0f}">'
+        f'<stop offset="0" stop-color="{T["accent"]}" stop-opacity="{T["glow"] * strength:.3f}"/>'
+        f'<stop offset="1" stop-color="{T["accent"]}" stop-opacity="0"/></radialGradient>'
+        f'<linearGradient id="k-sheen" x1="0" x2="1"><stop offset="0" stop-color="{T["fg"]}" stop-opacity="0"/>'
+        f'<stop offset=".5" stop-color="{T["fg"]}" stop-opacity="{T["sheen"]}"/>'
+        f'<stop offset="1" stop-color="{T["fg"]}" stop-opacity="0"/></linearGradient>'
+        '<filter id="k-blur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>'
+        '<filter id="k-blur2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>'
+        f'<clipPath id="k-frame"><rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="{rx}"/></clipPath>'
+        '</defs>'
+    )
+    tick = 10
+    corners = "".join(
+        f'<path class="k-tick" style="animation-delay:{.5 + i * .06:.2f}s" d="{d}" stroke="{T["accent"]}" stroke-width="1.5" stroke-opacity=".8"/>'
+        for i, d in enumerate([
+            f"M{12},{12 + tick} V12 H{12 + tick}",
+            f"M{W - 12 - tick},12 H{W - 12} V{12 + tick}",
+            f"M{W - 12},{H - 12 - tick} V{H - 12} H{W - 12 - tick}",
+            f"M{12 + tick},{H - 12} H12 V{H - 12 - tick}",
+        ])
+    )
+    body = (
+        f'<rect x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="{rx}" fill="{T["panel"]}"/>'
+        '<g clip-path="url(#k-frame)">'
+        f'<rect class="k-fade" width="{W}" height="{H}" fill="url(#k-grid)"/>'
+        f'<rect class="k-fade" style="animation-delay:.2s" width="{W}" height="{H}" fill="url(#k-glow)"/>'
+        f'<rect class="k-sheen" x="{-W * .35:.0f}" y="-40" width="{W * .35:.0f}" height="{H + 80}" fill="url(#k-sheen)" transform="skewX(-18)"/>'
+        '</g>'
+        f'<rect class="k-edge" pathLength="1" stroke-dasharray="1" x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="{rx}" stroke="{T["line"]}"/>'
+        f"{corners}"
+    )
+    css = (
+        f".k-fade{{animation:k-fade 1.1s {EASE} both}}@keyframes k-fade{{from{{opacity:0}}}}"
+        f".k-edge{{animation:k-edge 1.4s {EASE_IO} both}}@keyframes k-edge{{from{{stroke-dashoffset:1}}}}"
+        f".k-tick{{transform-box:fill-box;transform-origin:center;animation:k-tick .5s {EASE} both}}"
+        "@keyframes k-tick{from{opacity:0;transform:scale(.4)}}"
+        f".k-sheen{{opacity:0;animation:k-sheen 1.5s {EASE_IO} .55s both}}"
+        f"@keyframes k-sheen{{0%{{opacity:0;transform:skewX(-18deg) translateX(0)}}20%{{opacity:1}}80%{{opacity:1}}"
+        f"100%{{opacity:0;transform:skewX(-18deg) translateX({W * 1.45:.0f}px)}}}}"
+    )
+    return defs, body, css
 
 MONO = "FC"  # Fira Code (OFL)
 CJK = "TC"   # Noto Sans TC (OFL), only used for three glyphs in the hero
@@ -201,6 +258,6 @@ def clamp(v, lo, hi):
 
 
 __all__ = [
-    "THEMES", "EASE", "tr", "set_lang", "is_cjk", "text_w", "tc_attr", "ZH", "EASE_IO", "esc", "mono_w", "document", "write", "text",
+    "THEMES", "EASE", "chrome", "tr", "set_lang", "is_cjk", "text_w", "tc_attr", "ZH", "EASE_IO", "esc", "mono_w", "document", "write", "text",
     "smooth_path", "poly", "clamp", "math", "ROOT", "ASSETS",
 ]

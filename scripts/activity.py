@@ -12,7 +12,7 @@ import os
 import subprocess
 import urllib.request
 
-from svgkit import EASE, THEMES, ZH, document, esc, set_lang, tc_attr, text, tr, write
+from svgkit import EASE, EASE_IO, THEMES, ZH, chrome, document, esc, set_lang, smooth_path, tc_attr, text, tr, write
 import svgkit
 
 USER = "ChiJiun"
@@ -27,6 +27,7 @@ QUERY = """query($login:String!){user(login:$login){contributionsCollection{
 ZH.update({
     "contributions per week · last 12 months": "每週貢獻 · 近 12 個月",
     "refreshed daily by GitHub Actions": "每日由 GitHub Actions 更新",
+    "— 4-week average": "— 四週平均",
 })
 
 
@@ -60,7 +61,14 @@ def build(theme: str, data: dict, today: dt.date) -> str:
     total = cal["totalContributions"]
 
     b, css = [], []
-    b.append(f'<rect x=".5" y=".5" width="{W-1}" height="{H-1}" rx="14" fill="{T["panel"]}" stroke="{T["line"]}"/>')
+    defs, bg, kcss = chrome(T, W, H, 14, glow_at=(0.5, 0.0))
+    css.append(kcss)
+    b.append(defs)
+    b.append(bg)
+    # last four weeks: a soft band behind the bars
+    band_x = X0 + (n - 4) * pitch
+    b.append(f'<rect class="fade" style="animation-delay:1.1s" x="{band_x:.1f}" y="{TOP - 14}" width="{4 * pitch:.1f}" '
+             f'height="{BASE - TOP + 14}" rx="4" fill="{T["accent"]}" fill-opacity=".07"/>')
     b.append(f'<g class="fade">{text(X0, 36, "contributions per week · last 12 months", 12, "muted", T=T)}</g>')
     num = lambda v: f'<tspan fill="{T["fg"]}" font-weight="500">{v}</tspan>'
     c, p = data["totalCommitContributions"], data["totalPullRequestContributions"]
@@ -91,6 +99,18 @@ def build(theme: str, data: dict, today: dt.date) -> str:
                 b.append(f'<g class="fade" style="animation-delay:.4s">{text(x + bw/2, BASE + 21, (f"{mid.month}月" if svgkit.LANG == "zh" else mid.strftime("%b")), 10, "subtle", anchor="middle", T=T)}</g>')
             last_month = mid.month
 
+    # 4-week moving average, drawn as a phosphor line with afterglow
+    ma = []
+    for i in range(n):
+        win = [v for _, v in weeks[max(0, i - 3): i + 1]]
+        ma.append(sum(win) / len(win))
+    ma_pts = [(X0 + i * pitch + pitch / 2, BASE - max(1.5, m / vmax * (BASE - TOP))) for i, m in enumerate(ma)]
+    ma_d = smooth_path(ma_pts, 0.6)
+    b.append(f'<path class="ma" pathLength="1" stroke-dasharray="1" d="{ma_d}" stroke="{T["ok"]}" stroke-width="4" '
+             f'stroke-opacity=".35" filter="url(#k-blur)"/>')
+    b.append(f'<path class="ma" pathLength="1" stroke-dasharray="1" d="{ma_d}" stroke="{T["ok"]}" stroke-width="1.6" stroke-linejoin="round"/>')
+    b.append(f'<g class="fade" style="animation-delay:2.2s">{text(W / 2, 206, tr("— 4-week average"), 10, "ok", anchor="middle", T=T)}</g>')
+
     px = X0 + peak_i * pitch + pitch / 2
     ph = weeks[peak_i][1] / vmax * (BASE - TOP)
     pk = weeks[peak_i][0]
@@ -102,6 +122,8 @@ def build(theme: str, data: dict, today: dt.date) -> str:
     lx = px + (6 if anchor == "start" else -6)
     b.append(f'<g class="fade" style="animation-delay:1.3s"><path d="M{px:.1f},{BASE - ph - 4:.1f} V{TOP - 8}" stroke="{T["subtle"]}" stroke-dasharray="2 2"/>'
              f'{text(lx, TOP - 4, label, 10.5, "fg", anchor=anchor, T=T)}</g>')
+    b.append(f'<circle class="pk" style="animation-delay:1.3s" cx="{px:.1f}" cy="{BASE - ph:.1f}" r="3" fill="{T["panel"]}" stroke="{T["accent"]}" stroke-width="1.5"/>'
+             f'<circle class="ring" style="animation-delay:2.4s" cx="{px:.1f}" cy="{BASE - ph:.1f}" r="3" stroke="{T["accent"]}"/>')
 
     lx_last = X0 + (n - 1) * pitch + pitch / 2
     b.append(f'<circle class="ring" cx="{lx_last:.1f}" cy="{BASE + 6}" r="2.5" stroke="{T["accent"]}"/>'
@@ -121,6 +143,8 @@ def build(theme: str, data: dict, today: dt.date) -> str:
         f"@keyframes sweep{{0%{{opacity:.5;transform:none}}90%{{opacity:.5}}100%{{opacity:0;transform:translateX({X1 - X0 + 2}px)}}}}"
         ".ring{transform-box:fill-box;transform-origin:center;animation:ring 2.2s ease-out 2s infinite both}"
         "@keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(2.4);opacity:0}}"
+        f".ma{{animation:ma 2.2s {EASE_IO} 1.2s both}}@keyframes ma{{from{{stroke-dashoffset:1}}}}"
+        f".pk{{transform-box:fill-box;transform-origin:center;animation:pop .5s {EASE} both}}@keyframes pop{{from{{transform:scale(0)}}}}"
     )
     return document(
         W, H, "".join(b), "".join(css),
