@@ -111,6 +111,50 @@ def build(theme: str, data: dict, today: dt.date) -> str:
     b.append(f'<path class="ma" pathLength="1" stroke-dasharray="1" d="{ma_d}" stroke="{T["ok"]}" stroke-width="1.6" stroke-linejoin="round"/>')
     b.append(f'<g class="fade" style="animation-delay:2.2s">{text(W / 2, 206, tr("— 4-week average"), 10, "ok", anchor="middle", T=T)}</g>')
 
+    # ---- looping playhead: a cursor sweeps the year, lights each bar, and a readout follows -------
+    LOOP, L0 = 14.0, 2.8  # seconds per sweep, start after the entrance
+    span = (n - 1) * pitch
+    step_pct = 100.0 / (n - 1)
+    css.append(f".ph{{opacity:0;animation:ph {LOOP}s linear {L0}s infinite both}}"
+               f"@keyframes ph{{0%{{opacity:0;transform:none}}2%{{opacity:1}}96%{{opacity:1}}100%{{opacity:0;transform:translateX({span:.1f}px)}}}}")
+    x_first = X0 + pitch / 2
+    b.append(f'<g class="ph"><rect x="{x_first - 1:.1f}" y="{TOP - 12}" width="2" height="{BASE - TOP + 12}" fill="{T["fg"]}" fill-opacity=".55"/>'
+             f'<rect x="{x_first - 3:.1f}" y="{TOP - 12}" width="6" height="{BASE - TOP + 12}" fill="{T["accent"]}" fill-opacity=".35" filter="url(#k-blur)"/></g>')
+    # each bar flares as the cursor passes
+    for i, (start, v) in enumerate(weeks):
+        if v == 0:
+            continue
+        x = X0 + i * pitch + (pitch - bw) / 2
+        h = max(3.0, v / vmax * (BASE - TOP))
+        p = i * step_pct
+        a, c = max(0.0, p - 1.5), min(100.0, p + 7)
+        css.append(f"@keyframes f{i}{{0%,{a:.1f}%{{opacity:0}}{p:.1f}%{{opacity:.8}}{c:.1f}%,100%{{opacity:0}}}}")
+        b.append(f'<rect class="fl" style="animation-name:f{i}" x="{x:.1f}" y="{BASE - h:.1f}" width="{bw:.1f}" height="{h:.1f}" rx="2" fill="{T["fg"]}"/>')
+    css.append(f".fl{{opacity:0;animation:{LOOP}s linear {L0}s infinite both}}")
+    # a phosphor dot rides the 4-week average under the cursor
+    stops = "".join(f"{i * step_pct:.1f}%{{transform:translate({x - x_first:.1f}px,{y - ma_pts[0][1]:.1f}px)}}" for i, (x, y) in enumerate(ma_pts))
+    css.append(f"@keyframes mdot{{{stops}}}"
+               f".mdot{{animation:mdot {LOOP}s linear {L0}s infinite both}}"
+               f".mdotv{{opacity:0;animation:mdotv {LOOP}s linear {L0}s infinite both}}@keyframes mdotv{{0%{{opacity:0}}2%,96%{{opacity:1}}100%{{opacity:0}}}}")
+    b.append(f'<g class="mdotv"><g class="mdot"><circle cx="{ma_pts[0][0]:.1f}" cy="{ma_pts[0][1]:.1f}" r="7" fill="{T["ok"]}" fill-opacity=".35" filter="url(#k-blur)"/>'
+             f'<circle cx="{ma_pts[0][0]:.1f}" cy="{ma_pts[0][1]:.1f}" r="3" fill="{T["panel"]}" stroke="{T["ok"]}" stroke-width="1.5"/></g></g>')
+    # readout in the title row (between the title and the totals): one text per week, shown while the cursor is on it
+    ro_x, ro_y = 350, 36
+    for i, (start, v) in enumerate(weeks):
+        p = i * step_pct
+        a, c = max(0.0, p - step_pct / 2), min(100.0, p + step_pct / 2)
+        last = i == n - 1
+        if svgkit.LANG == "zh":
+            s = f"{start.month}/{start.day} 那週 · {v} 次貢獻"
+        else:
+            s = f"{start.strftime('%b')} {start.day} · {v} contribution{'s' if v != 1 else ''}"
+        css.append(f"@keyframes r{i}{{0%,{a:.2f}%{{opacity:{1 if last else 0}}}{a + 0.01:.2f}%,{c:.2f}%{{opacity:1}}{c + 0.01:.2f}%,100%{{opacity:0}}}}"
+                   if not last else
+                   f"@keyframes r{i}{{0%,{a:.2f}%{{opacity:0}}{a + 0.01:.2f}%,100%{{opacity:1}}}}")
+        b.append(f'<g class="ro" style="animation-name:r{i};opacity:{1 if last else 0}">'
+                 f'{text(ro_x, ro_y, s, 10.5, "accent", 500, T=T)}</g>')
+    css.append(f".ro{{animation:{LOOP}s linear {L0}s infinite both}}")
+
     px = X0 + peak_i * pitch + pitch / 2
     ph = weeks[peak_i][1] / vmax * (BASE - TOP)
     pk = weeks[peak_i][0]
